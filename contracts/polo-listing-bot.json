@@ -1,0 +1,46 @@
+{
+  "bot": "Polo Listing Bot",
+  "actions": [
+    "process_photos",
+    "create_listings"
+  ],
+  "inputs": {
+    "photos": "folder path (or cloud folder ID) for dump (an uploads dump); prefer SKU sticker shot first or one folder per shirt",
+    "perShirt": [
+      "SKU",
+      "brand",
+      "size",
+      "color",
+      "material",
+      "flaws",
+      "length",
+      "chest"
+    ],
+    "listings": [
+      "SKU",
+      "targetPrice ending .67",
+      "optional title/desc overrides",
+      "schedule window",
+      "owner approval flag"
+    ],
+    "always": [
+      "latest SKU if assigning new"
+    ]
+  },
+  "returns": {
+    "intake": "grouped by SKU, photo counts, measurements, flaws, cleaned listing set, output path Listed/{SKU}",
+    "drafts": "title, description, price, category/specifics, photo order, schedule date",
+    "status": "draft | awaiting_owner_approval | scheduled | live | blocked"
+  },
+  "idealRequests": {
+    "process_photos": "Process photos in folder <path> (Uploads dump). Group by SKU sticker, build listing photo sets with approved format. Save under Listed/{SKU}. Report groups, measurements, flaws. Do not list.",
+    "create_listings": "Create NEW eBay drafts for SKUs [...]. Prices from attached table. Schedule after the owner approves each. Do not publish until he approves."
+  },
+  "cannot": [
+    "publish without owner approval",
+    "alter garment defects",
+    "write to original photo dump folder",
+    "eBay scheduler for relists",
+    "invent SKUs or prices"
+  ]
+}

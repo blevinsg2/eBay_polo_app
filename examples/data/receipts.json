@@ -1,0 +1,91 @@
+{
+  "receipts": [
+    {
+      "id": "example-rcpt-01",
+      "store": "EXAMPLE Thrift · Short North",
+      "address": "EXAMPLE address · N High St, Columbus, OH",
+      "date": "2026-09-12",
+      "items": [
+        {
+          "name": "Mens Polo",
+          "qty": 4,
+          "unit": 4.99,
+          "amount": 19.96
+        },
+        {
+          "name": "Mens Quarter Zip",
+          "qty": 1,
+          "unit": 6.99,
+          "amount": 6.99
+        }
+      ],
+      "subtotal": 26.95,
+      "tax": 2.02,
+      "total": 28.97,
+      "itemCount": 5,
+      "demo": true,
+      "source": "example"
+    },
+    {
+      "id": "example-rcpt-02",
+      "store": "EXAMPLE Upscale Resale",
+      "address": "EXAMPLE address · northeast, Columbus, OH",
+      "date": "2026-09-20",
+      "items": [
+        {
+          "name": "Mens Golf Polo",
+          "qty": 2,
+          "unit": 9.0,
+          "amount": 18.0
+        }
+      ],
+      "subtotal": 18.0,
+      "tax": 1.35,
+      "total": 19.35,
+      "itemCount": 2,
+      "demo": true,
+      "source": "example"
+    },
+    {
+      "id": "example-rcpt-03",
+      "store": "EXAMPLE Thrift · Short North",
+      "address": "EXAMPLE address · N High St, Columbus, OH",
+      "date": "2026-10-03",
+      "items": [
+        {
+          "name": "Mens Polo",
+          "qty": 3,
+          "unit": 4.99,
+          "amount": 14.97
+        }
+      ],
+      "subtotal": 14.97,
+      "tax": 1.12,
+      "total": 16.09,
+      "itemCount": 3,
+      "demo": true,
+      "source": "example"
+    },
+    {
+      "id": "example-rcpt-04",
+      "store": "EXAMPLE Charity Store",
+      "address": "EXAMPLE address · north High St, Columbus, OH",
+      "date": "2026-10-05",
+      "items": [
+        {
+          "name": "Shirts 50% off",
+          "qty": 6,
+          "unit": 2.5,
+          "amount": 15.0
+        }
+      ],
+      "subtotal": 15.0,
+      "tax": 1.13,
+      "total": 16.13,
+      "itemCount": 6,
+      "demo": true,
+      "source": "example"
+    }
+  ],
+  "_note": "EXAMPLE DATA. Made-up receipts so Receipt Tracker has something to chart."
+}

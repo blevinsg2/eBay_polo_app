@@ -1,0 +1,35 @@
+# secrets / local config
+.env
+.env.*
+!.env.example
+config/*.local.json
+config/pitstops.json
+
+# runtime data (jobs, uploads, receipts, ratings)
+/var/
+
+# your photos and tool output never go in the repo
+/photos/
+/listing_photos/
+/plan/
+*.heic
+*.HEIC
+*.jpg
+*.jpeg
+*.png
+*.webp
+!web/vendor/**/*.png
+!examples/photos/*.jpg
+!docs/screenshots/*.png
+!docs/screenshots/*.jpg
+
+# eBay page dumps / cookie jars from fetch_listing_photos.sh
+*.html
+!web/index.html
+cj
+*.cookies
+
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/

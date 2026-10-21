@@ -1,0 +1,46 @@
+{
+  "_note": "EXAMPLE DATA. A completed process_photos job.",
+  "id": "example-process-photos-0001",
+  "createdAt": "2026-10-01T15:00:00Z",
+  "completedAt": "2026-10-01T15:20:00Z",
+  "action": "process_photos",
+  "targetBot": "Polo Listing Bot",
+  "payload": {
+    "folder": "photos/inbox",
+    "note": "EXAMPLE batch"
+  },
+  "status": "completed",
+  "summary": "EXAMPLE: 3 shirts grouped (EX-0001..EX-0003), 14 photos cleaned, 1 flaw flagged",
+  "result": {
+    "groups": [
+      {
+        "sku": "EX-0001",
+        "brand": "Peter Millar",
+        "size": "L",
+        "photos": 5,
+        "chest": "XX in",
+        "length": "XX in",
+        "flaws": "none seen"
+      },
+      {
+        "sku": "EX-0002",
+        "brand": "FootJoy",
+        "size": "M",
+        "photos": 4,
+        "chest": "XX in",
+        "length": "XX in",
+        "flaws": "small mark near hem (photo 3)"
+      },
+      {
+        "sku": "EX-0003",
+        "brand": "Nike Golf",
+        "size": "XL",
+        "photos": 5,
+        "chest": "XX in",
+        "length": "XX in",
+        "flaws": "none seen"
+      }
+    ],
+    "output": "Listed/{SKU}"
+  }
+}

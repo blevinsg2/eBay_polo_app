@@ -1,0 +1,113 @@
+{
+  "_note": "EXAMPLE pit stops in Columbus, OH so the demo works. Names and addresses are made up. Copy this file, put in your own stops, and point POLO_PITSTOPS_FILE at it.",
+  "pitstops": [
+    {
+      "id": "ex-gas-a",
+      "name": "EXAMPLE Gas A",
+      "chain": "EXAMPLE Gas A",
+      "category": "gas",
+      "address": "EXAMPLE address · N High St, Columbus, OH",
+      "lat": 39.985,
+      "lng": -83.006,
+      "hours": "24/7",
+      "notes": "Gas + snacks · ~10 min",
+      "example": true
+    },
+    {
+      "id": "ex-gas-b",
+      "name": "EXAMPLE Gas B",
+      "chain": "EXAMPLE Gas B",
+      "category": "gas",
+      "address": "EXAMPLE address · near OSU, Columbus, OH",
+      "lat": 40.015,
+      "lng": -83.011,
+      "hours": "24/7",
+      "notes": "Gas · campus corridor",
+      "example": true
+    },
+    {
+      "id": "ex-gas-c",
+      "name": "EXAMPLE Gas C",
+      "chain": "EXAMPLE Gas C",
+      "category": "gas",
+      "address": "EXAMPLE address · Clintonville, Columbus, OH",
+      "lat": 40.048,
+      "lng": -83.018,
+      "hours": "Typical hours",
+      "notes": "Gas · north High St",
+      "example": true
+    },
+    {
+      "id": "ex-gas-d",
+      "name": "EXAMPLE Gas D",
+      "chain": "EXAMPLE Gas D",
+      "category": "gas",
+      "address": "EXAMPLE address · east side, Columbus, OH",
+      "lat": 40.045,
+      "lng": -82.962,
+      "hours": "Typical hours",
+      "notes": "Gas · east loop",
+      "example": true
+    },
+    {
+      "id": "ex-gas-e",
+      "name": "EXAMPLE Gas E",
+      "chain": "EXAMPLE Gas E",
+      "category": "gas",
+      "address": "EXAMPLE address · near downtown, Columbus, OH",
+      "lat": 39.98,
+      "lng": -82.952,
+      "hours": "Typical 24h",
+      "notes": "Gas · last leg",
+      "example": true
+    },
+    {
+      "id": "ex-food-a",
+      "name": "EXAMPLE Burger Spot",
+      "chain": "EXAMPLE Burger Spot",
+      "category": "food",
+      "address": "EXAMPLE address · Short North, Columbus, OH",
+      "lat": 39.982,
+      "lng": -83.004,
+      "hours": "Typical hours",
+      "notes": "Fast food · ~15 min",
+      "example": true
+    },
+    {
+      "id": "ex-food-b",
+      "name": "EXAMPLE Sandwich Shop",
+      "chain": "EXAMPLE Sandwich Shop",
+      "category": "food",
+      "address": "EXAMPLE address · Clintonville, Columbus, OH",
+      "lat": 40.035,
+      "lng": -83.014,
+      "hours": "Mon–Sat",
+      "notes": "Food · closed Sunday",
+      "example": true
+    },
+    {
+      "id": "ex-food-c",
+      "name": "EXAMPLE Taco Place",
+      "chain": "EXAMPLE Taco Place",
+      "category": "food",
+      "address": "EXAMPLE address · north side, Columbus, OH",
+      "lat": 40.061,
+      "lng": -82.99,
+      "hours": "Typical hours",
+      "notes": "Fast food",
+      "example": true
+    },
+    {
+      "id": "ex-food-d",
+      "name": "EXAMPLE Coffee",
+      "chain": "EXAMPLE Coffee",
+      "category": "food",
+      "address": "EXAMPLE address · east side, Columbus, OH",
+      "lat": 40.015,
+      "lng": -82.95,
+      "hours": "Typical hours",
+      "notes": "Coffee",
+      "example": true
+    }
+  ]
+}

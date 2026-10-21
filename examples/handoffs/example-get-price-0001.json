@@ -1,0 +1,72 @@
+{
+  "_note": "EXAMPLE DATA. The shape of a completed get_price job. Titles are generic and prices are rounded; no real listing, seller, buyer, or item ID is included.",
+  "id": "example-get-price-0001",
+  "action": "get_price",
+  "targetBot": "Polo Pricing",
+  "status": "completed",
+  "payload": {
+    "brand": "Fairway & Greene",
+    "size": "XL",
+    "condition": "Good; no defects",
+    "conditionFlags": [],
+    "asking": null,
+    "market": "eBay",
+    "notes": "gray",
+    "photos": [
+      "var/uploads/pricing/example/front.jpg",
+      "var/uploads/pricing/example/tag.jpg"
+    ]
+  },
+  "summary": "BUY at <=$5; list $22; sold $15-25",
+  "result": {
+    "decision": "buy",
+    "buyCeiling": 5,
+    "listPrice": 22,
+    "soldRange": {
+      "low": 15,
+      "high": 25
+    },
+    "confidence": "med",
+    "notes": "Asking unknown: buy only at $5 or less. Plain XL with no famous club logo, so expect about $18-20 sold. Club-logo versions sell higher; faded ones drop to $5-8.",
+    "comps": [
+      {
+        "title": "EXAMPLE: Fairway & Greene striped XL polo",
+        "price": 20,
+        "status": "sold",
+        "date": null,
+        "condition": "Pre-Owned",
+        "url": "https://www.ebay.com/sch/i.html?_nkw=fairway+greene+polo+xl&LH_Sold=1&LH_Complete=1",
+        "signal": "sold median"
+      },
+      {
+        "title": "EXAMPLE: Fairway & Greene tech polo XL",
+        "price": 15,
+        "status": "sold",
+        "date": null,
+        "condition": "Pre-Owned",
+        "url": "https://www.ebay.com/sch/i.html?_nkw=fairway+greene+polo+xl&LH_Sold=1&LH_Complete=1",
+        "signal": "sold floor"
+      },
+      {
+        "title": "EXAMPLE: Fairway & Greene club-logo polo XL",
+        "price": 35,
+        "status": "sold",
+        "date": null,
+        "condition": "Pre-Owned",
+        "url": "https://www.ebay.com/sch/i.html?_nkw=fairway+greene+polo+xl&LH_Sold=1&LH_Complete=1",
+        "signal": "sold club-logo premium"
+      },
+      {
+        "title": "EXAMPLE: Fairway & Greene polo XL",
+        "price": 25,
+        "status": "active",
+        "date": null,
+        "condition": "Pre-Owned",
+        "url": "https://www.ebay.com/sch/i.html?_nkw=fairway+greene+polo+xl",
+        "signal": "active competition"
+      }
+    ]
+  },
+  "createdAt": "2026-10-01T14:00:00Z",
+  "completedAt": "2026-10-01T14:03:00Z"
+}

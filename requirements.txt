@@ -1,0 +1,3 @@
+# App (app/server.py is stdlib; these are for the photo/receipt OCR endpoints)
+Pillow>=10
+rapidocr_onnxruntime>=1.2   # offline OCR: brand/size off tags, totals off receipts

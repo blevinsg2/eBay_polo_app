@@ -1,0 +1,76 @@
+{
+  "bot": "Thrift Router",
+  "action": "plan_route",
+  "inputs": {
+    "start": {
+      "required": true,
+      "notes": "address/coords; required when not home"
+    },
+    "end": {
+      "default": "same as start (or POLO_HOME_* if configured)"
+    },
+    "startTime": {
+      "requiredForTimed": true,
+      "notes": "local clock time"
+    },
+    "durationHours_or_availableMinutes": {
+      "requiredForTimed": true
+    },
+    "minutesPerStop": {
+      "default": 20
+    },
+    "stop_count": {
+      "default": 8
+    },
+    "focus": {
+      "default": "used premium golf polos"
+    },
+    "day": {
+      "default": "today"
+    },
+    "startLat_startLng": {
+      "optional": true,
+      "notes": "coords when GPS/geocode known"
+    },
+    "endLat_endLng": {
+      "optional": true,
+      "notes": "end coords when known"
+    },
+    "includeNonConventional": {
+      "default": false,
+      "false": "clothing-heavy only",
+      "true": "also church thrifts, mixed/local shops; furniture-only stores usually omitted unless asked; no donation-only or restricted-access sites"
+    },
+    "focusMode": {
+      "default": "clothing_heavy",
+      "enum": [
+        "clothing_heavy",
+        "broad"
+      ]
+    }
+  },
+  "returns": {
+    "always": [
+      "ordered stop list",
+      "Google Maps URL origin=start destination=end",
+      "rough drive miles/time"
+    ],
+    "timed": [
+      "schedule with arrive/leave ETA and drive leg minutes",
+      "fitsWindow",
+      "dropped with reason",
+      "total trip time including dwell"
+    ]
+  },
+  "idealRequest": "Route: start=EXAMPLE downtown Columbus OH, end=same, startTime=2:00 PM local, durationHours=3, minutesPerStop=20, stop_count=8, focus=premium golf polos, day=today. Return schedule + Maps URL (origin=start destination=end).",
+  "limits": [
+    "ETA estimates no live traffic",
+    "hours may need call-ahead",
+    "short window returns fewer stops"
+  ],
+  "deprecated": {
+    "includeGasStop": "ignored — pit stops are Pipeline UI-only",
+    "includeFoodStop": "ignored — pit stops are Pipeline UI-only"
+  },
+  "notes": "Pit stops (gas/food) are managed in the Polo Pipeline UI with insert + drag-drop after Thrift Router returns the thrift list. They come from config/pitstops.example.json (or POLO_PITSTOPS_FILE)."
+}

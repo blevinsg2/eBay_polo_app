@@ -1,0 +1,3878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Polo Pipeline — Golf-Polo Reselling Control Panel</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="vendor/fonts/fonts.css" />
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --bg-elevated: #141921;
+      --bg-card: #1a212c;
+      --bg-hover: #222b38;
+      --border: #2a3544;
+      --border-subtle: #1e2733;
+      --text: #e8edf4;
+      --text-muted: #8b9bb0;
+      --text-dim: #5c6b7f;
+      --accent: #3dd68c;
+      --accent-dim: rgba(61, 214, 140, 0.15);
+      --accent-glow: rgba(61, 214, 140, 0.35);
+      --blue: #5b9fff;
+      --blue-dim: rgba(91, 159, 255, 0.15);
+      --amber: #f5b942;
+      --amber-dim: rgba(245, 185, 66, 0.15);
+      --rose: #f07178;
+      --purple: #a78bfa;
+      --purple-dim: rgba(167, 139, 250, 0.15);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --font: "DM Sans", system-ui, -apple-system, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(61, 214, 140, 0.08), transparent),
+        radial-gradient(ellipse 40% 30% at 90% 80%, rgba(91, 159, 255, 0.05), transparent);
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.15rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .brand { display: flex; align-items: center; gap: 0.8rem; }
+
+    .brand-mark {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #2bb673);
+      display: grid; place-items: center; font-size: 1.2rem;
+      box-shadow: 0 0 18px var(--accent-glow); flex-shrink: 0;
+    }
+
+    .brand h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+    .brand .subtitle { font-size: 0.8rem; color: var(--text-muted); }
+
+    .topbar-right { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+
+    .user-meta { font-size: 0.75rem; color: var(--text-dim); text-align: right; line-height: 1.4; }
+    .user-meta strong { color: var(--text-muted); font-weight: 500; }
+
+    .demo-badge {
+      display: inline-flex; align-items: center;
+      padding: 0.2rem 0.5rem; border-radius: 999px;
+      background: var(--amber-dim); color: var(--amber);
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.2rem 0.5rem; border-radius: 999px;
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .live-badge.on { background: var(--accent-dim); color: var(--accent); }
+    .live-badge.off { background: var(--bg-hover); color: var(--text-dim); }
+    .live-badge .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+    }
+    .live-badge.on .dot { box-shadow: 0 0 6px var(--accent); }
+
+    .nav-tools { display: flex; gap: 0.4rem; }
+
+    .nav-btn {
+      appearance: none; border: 1px solid var(--border); background: var(--bg-card);
+      color: var(--text-muted); font-family: var(--font); font-size: 0.78rem; font-weight: 600;
+      padding: 0.45rem 0.75rem; border-radius: var(--radius-sm); cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .nav-btn:hover { background: var(--bg-hover); color: var(--text); border-color: #3a4a5e; }
+    .nav-btn.active { background: var(--accent-dim); border-color: rgba(61, 214, 140, 0.4); color: var(--accent); }
+    .nav-btn.tool { border-style: dashed; }
+    .nav-btn.tool:hover { border-style: solid; }
+    .nav-btn.quick { background: rgba(120, 170, 255, 0.07); border-color: rgba(120, 170, 255, 0.28); color: #a9c4ee; }
+    .nav-btn.quick:hover { background: rgba(120, 170, 255, 0.14); color: #d4e3fa; }
+    .nav-btn.quick.active { background: rgba(120, 170, 255, 0.18); border-color: rgba(120, 170, 255, 0.5); color: #cfe0ff; }
+    .maps-open {
+      display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center;
+      font-size: 0.78rem; color: var(--text-muted);
+    }
+    .maps-open span { font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    .maps-open a {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.4rem 0.85rem; border: 1px solid rgba(61, 214, 140, 0.45);
+      border-radius: 7px; text-decoration: none; font-weight: 700;
+      background: rgba(61, 214, 140, 0.12); color: var(--accent);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .maps-open a:hover { background: rgba(61, 214, 140, 0.22); border-color: rgba(61, 214, 140, 0.7); color: #6ee7a8; }
+    .maps-open a.maps-apple {
+      background: rgba(120, 170, 255, 0.12); border-color: rgba(120, 170, 255, 0.45); color: #a9c4ee;
+    }
+    .maps-open a.maps-apple:hover { background: rgba(120, 170, 255, 0.22); border-color: rgba(120, 170, 255, 0.7); color: #d4e3fa; }
+    .route-maps-bar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem;
+      margin: 0.35rem 0 0;
+    }
+    .route-maps-bar:empty { display: none; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .section-label {
+      font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-dim); font-weight: 600; margin-bottom: 0.65rem;
+    }
+
+    .live-strip {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 0.75rem; margin-bottom: 1.25rem;
+      background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius); padding: 0.75rem 1rem;
+    }
+    .live-strip .live-left { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+    .live-strip .live-stat { font-size: 0.8rem; color: var(--text-muted); }
+    .live-strip .live-stat strong { color: var(--text); font-weight: 650; }
+    .live-strip .live-snippet {
+      font-size: 0.75rem; color: var(--text-dim); max-width: 42ch;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .live-strip .live-hint {
+      font-size: 0.7rem; color: var(--text-dim); width: 100%;
+      font-family: var(--mono);
+    }
+
+    .today-strip {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.65rem; margin-bottom: 1.5rem;
+    }
+
+    .stat {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0.9rem 1rem; position: relative; overflow: hidden;
+    }
+    .stat::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--stat-color, var(--accent)); opacity: 0.85;
+    }
+    .stat .label {
+      font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--text-dim); font-weight: 600; margin-bottom: 0.25rem;
+    }
+    .stat .value {
+      font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat .hint { font-size: 0.68rem; color: var(--text-dim); margin-top: 0.15rem; }
+
+    .pipeline {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.25rem;
+    }
+
+    .stage {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.1rem; display: flex; flex-direction: column; gap: 0.55rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .stage:hover { border-color: #3a4a5e; box-shadow: var(--shadow); }
+    .stage.ready {
+      border-color: rgba(61, 214, 140, 0.4);
+      box-shadow: 0 0 0 1px rgba(61, 214, 140, 0.15);
+    }
+    .stage-num { font-family: var(--mono); font-size: 0.65rem; color: var(--text-dim); }
+    .stage-name { font-size: 1rem; font-weight: 650; letter-spacing: -0.01em; }
+    .stage-bot {
+      font-size: 0.72rem; color: var(--text-muted);
+      display: flex; align-items: center; gap: 0.35rem;
+    }
+    .stage-bot .bot-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--bot-color, var(--blue)); flex-shrink: 0;
+    }
+    .stage-status {
+      display: inline-flex; font-size: 0.68rem; font-weight: 600;
+      padding: 0.22rem 0.5rem; border-radius: 999px; width: fit-content;
+    }
+    .status-idle { background: var(--bg-hover); color: var(--text-dim); }
+    .status-ready { background: var(--blue-dim); color: var(--blue); }
+    .status-done { background: var(--accent-dim); color: var(--accent); }
+    .stage-metric { font-family: var(--mono); font-size: 0.78rem; color: var(--text-muted); }
+    .stage-metric strong { color: var(--text); font-weight: 600; }
+
+    .btn {
+      appearance: none; border: none; cursor: pointer; font-family: var(--font);
+      font-size: 0.8rem; font-weight: 600; padding: 0.55rem 0.85rem;
+      border-radius: var(--radius-sm); transition: background 0.15s, transform 0.1s, opacity 0.15s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #0a1a12; }
+    .btn-primary:hover:not(:disabled) { background: #4ae09a; }
+    .btn-secondary {
+      background: var(--bg-hover); color: var(--text); border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { background: #2a3545; }
+    .btn-ghost {
+      background: transparent; color: var(--text-muted); border: 1px solid var(--border);
+      padding: 0.35rem 0.6rem; font-size: 0.72rem;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: #3a4a5e; background: var(--bg-hover); }
+    .btn-sm { padding: 0.35rem 0.6rem; font-size: 0.72rem; }
+    .stage .btn { margin-top: auto; }
+
+    .tools-strip {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.5rem;
+    }
+
+    .tool-card {
+      background: var(--bg-elevated); border: 1px dashed var(--border); border-radius: var(--radius);
+      padding: 1rem 1.15rem; display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; cursor: pointer; transition: border-color 0.15s, background 0.15s, border-style 0.15s;
+      text-align: left; font-family: var(--font); color: inherit; width: 100%;
+    }
+    .tool-card:hover { border-style: solid; border-color: #3a4a5e; background: var(--bg-card); }
+    .tool-card .tool-icon {
+      width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .tool-card.route .tool-icon { background: var(--purple-dim); }
+    .tool-card.price .tool-icon { background: var(--amber-dim); }
+    .tool-card .tool-copy h3 { font-size: 0.9rem; font-weight: 650; margin-bottom: 0.1rem; }
+    .tool-card .tool-copy p { font-size: 0.72rem; color: var(--text-dim); }
+    .tool-card .tool-arrow { color: var(--text-dim); font-size: 1.1rem; flex-shrink: 0; }
+    .tool-card-inner { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+
+    .panel {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem;
+    }
+    .panel-head {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 0.75rem; padding: 0.9rem 1.1rem; border-bottom: 1px solid var(--border-subtle);
+    }
+    .panel-head h2 { font-size: 0.95rem; font-weight: 650; }
+    .panel-head .muted { font-size: 0.78rem; color: var(--text-dim); font-weight: 400; margin-left: 0.4rem; }
+
+    .handoff-note {
+      padding: 0.65rem 1.1rem; font-size: 0.72rem; color: var(--text-dim);
+      border-bottom: 1px solid var(--border-subtle); background: var(--bg-elevated);
+      line-height: 1.45;
+    }
+    .handoff-note code {
+      font-family: var(--mono); font-size: 0.68rem; color: var(--text-muted);
+      background: var(--bg); padding: 0.1rem 0.35rem; border-radius: 4px;
+    }
+
+    .handoff-list { list-style: none; max-height: 280px; overflow-y: auto; }
+    .handoff-list li {
+      padding: 0.75rem 1.1rem; border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.8rem;
+    }
+    .handoff-list li:last-child { border-bottom: none; }
+    .handoff-list .hf-top {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.4rem;
+    }
+    .handoff-list .hf-action { font-weight: 650; }
+    .handoff-list .hf-bot { font-size: 0.72rem; color: var(--text-muted); }
+    .handoff-list .hf-summary { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem; }
+    .handoff-list .hf-empty {
+      padding: 1.25rem 1.1rem; text-align: center; color: var(--text-dim); font-size: 0.85rem;
+    }
+
+    .hf-pill {
+      font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .hf-pending { background: var(--amber-dim); color: var(--amber); }
+    .hf-completed { background: var(--accent-dim); color: var(--accent); }
+    .hf-failed { background: rgba(240, 113, 120, 0.15); color: var(--rose); }
+
+    .table-wrap { overflow-x: hidden; width: 100%; }
+    table.inv { width: 100%; border-collapse: collapse; font-size: 0.8rem; table-layout: fixed; }
+    table.inv th {
+      text-align: left; padding: 0.5rem 0.55rem; font-size: 0.62rem; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-dim); font-weight: 600;
+      background: var(--bg-elevated); border-bottom: 1px solid var(--border-subtle); white-space: normal;
+    }
+    table.inv td {
+      padding: 0.55rem 0.55rem; border-bottom: 1px solid var(--border-subtle); vertical-align: middle;
+      word-wrap: break-word; overflow-wrap: anywhere;
+    }
+    table.inv th:nth-child(2), table.inv td:nth-child(2) { width: 3.5rem; }
+    table.inv th:nth-child(4), table.inv td:nth-child(4) { width: 5.5rem; }
+    table.inv th:nth-child(5), table.inv td:nth-child(5) { width: 5rem; }
+    table.inv th:nth-child(6), table.inv td:nth-child(6) { width: 5.5rem; }
+    table.inv tr:last-child td { border-bottom: none; }
+    table.inv tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+    .shirt-brand { font-weight: 600; }
+    .shirt-meta { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.05rem; }
+    .price { font-family: var(--mono); font-size: 0.85rem; font-weight: 500; color: var(--accent); }
+    .price.pending { color: var(--text-dim); }
+    .stage-pill {
+      display: inline-flex; font-size: 0.68rem; font-weight: 600;
+      padding: 0.22rem 0.5rem; border-radius: 999px; white-space: nowrap;
+    }
+    .pill-intake { background: var(--blue-dim); color: var(--blue); }
+    .pill-list { background: rgba(91, 159, 255, 0.22); color: #8bb8ff; }
+    .pill-sold { background: var(--accent-dim); color: var(--accent); }
+    .empty-row td { text-align: center; color: var(--text-dim); padding: 2rem 1rem; font-size: 0.85rem; }
+
+    footer.how {
+      background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius); padding: 1.15rem 1.25rem;
+    }
+    footer.how h3 { font-size: 0.8rem; font-weight: 650; margin-bottom: 0.4rem; color: var(--text-muted); }
+    footer.how p { font-size: 0.78rem; color: var(--text-dim); line-height: 1.6; max-width: 72ch; }
+    footer.how .bots { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
+    .bot-chip {
+      font-size: 0.7rem; font-weight: 600; padding: 0.25rem 0.55rem; border-radius: 999px;
+      background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted);
+    }
+
+    .tool-view-header {
+      display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .back-link {
+      appearance: none; background: none; border: none; color: var(--text-muted);
+      font-family: var(--font); font-size: 0.8rem; font-weight: 600; cursor: pointer;
+      padding: 0; margin-bottom: 0.75rem; display: inline-flex; align-items: center; gap: 0.35rem;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    .tool-hero { display: flex; align-items: center; gap: 0.9rem; }
+    .tool-hero-icon {
+      width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .tool-hero.route .tool-hero-icon {
+      background: var(--purple-dim); box-shadow: 0 0 20px rgba(167, 139, 250, 0.2);
+    }
+    .tool-hero.price .tool-hero-icon {
+      background: var(--amber-dim); box-shadow: 0 0 20px rgba(245, 185, 66, 0.2);
+    }
+    .tool-hero h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; }
+    .tool-hero .bot-tag { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+    .tool-panel {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.35rem 1.4rem; max-width: 560px;
+    }
+    .tool-panel label {
+      display: block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 0.35rem;
+    }
+    .tool-panel .field { margin-bottom: 1rem; }
+    .tool-panel input, .tool-panel select, .tool-panel textarea,
+    .modal input, .modal select {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text); font-family: var(--font);
+      font-size: 0.9rem; padding: 0.6rem 0.75rem; outline: none; transition: border-color 0.15s;
+    }
+    .tool-panel input:focus, .tool-panel select:focus, .modal input:focus {
+      border-color: rgba(61, 214, 140, 0.5);
+    }
+    .tool-panel select, .modal select {
+      cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='%238b9bb0'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 0.75rem center; padding-right: 2rem;
+    }
+    .tool-panel .hint, .modal .hint { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem; }
+    .tool-panel .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .tool-panel .btn-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+    .result-box {
+      margin-top: 1.25rem; padding: 1.1rem; background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); display: none;
+    }
+    .result-box.visible { display: block; animation: fade-in 0.25s ease; }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .result-box h4 { font-size: 0.8rem; font-weight: 650; color: var(--accent); margin-bottom: 0.65rem; }
+
+    .route-stops { list-style: none; counter-reset: stop; }
+    .route-stops li {
+      counter-increment: stop; display: flex; gap: 0.75rem; padding: 0.55rem 0;
+      border-bottom: 1px solid var(--border-subtle); font-size: 0.85rem;
+    }
+    .route-stops li:last-child { border-bottom: none; }
+    .route-stops li::before {
+      content: counter(stop); font-family: var(--mono); font-size: 0.7rem; font-weight: 500;
+      color: var(--purple); background: var(--purple-dim); width: 22px; height: 22px;
+      border-radius: 6px; display: grid; place-items: center; flex-shrink: 0;
+    }
+    .route-stops .store-name { font-weight: 600; }
+    .route-stops .store-meta { font-size: 0.72rem; color: var(--text-dim); }
+    .route-summary {
+      font-size: 0.78rem; color: var(--text-muted); margin-top: 0.75rem;
+      padding-top: 0.65rem; border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Pricing v2 */
+    .tool-panel.pr-wrap { max-width: 980px; }
+    .pr-chips input { width:auto !important; margin:0; }
+    .pr-chips label { white-space:nowrap; text-transform:none; letter-spacing:0; }
+    .pr-table td { white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; }
+    .pr-step { display:flex; align-items:center; gap:.5rem; font-weight:600; margin:1.1rem 0 .55rem; }
+    .pr-num { width:22px; height:22px; border-radius:50%; background:var(--amber-dim); color:var(--amber); display:inline-flex; align-items:center; justify-content:center; font-size:.75rem; }
+    .pr-hint { font-size:.75rem; color:var(--text-dim); font-weight:400; }
+    .pr-drop { border:2px dashed var(--border); border-radius:var(--radius); padding:1rem; text-align:center; background:var(--bg-elevated); transition:.15s; }
+    .pr-drop.drag { border-color:var(--accent); background:var(--accent-dim); }
+    .pr-drop-empty { color:var(--text-muted); display:flex; flex-direction:column; gap:.4rem; align-items:center; }
+    .pr-thumbs { display:flex; flex-wrap:wrap; gap:.5rem; justify-content:flex-start; }
+    .pr-thumbs:not(:empty) { margin-top:.75rem; }
+    .pr-thumb { position:relative; width:92px; height:92px; border-radius:var(--radius-sm); overflow:hidden; border:1px solid var(--border); }
+    .pr-thumb img { width:100%; height:100%; object-fit:cover; }
+    .pr-thumb button { position:absolute; top:2px; right:2px; background:rgba(0,0,0,.65); color:#fff; border:0; border-radius:50%; width:20px; height:20px; cursor:pointer; }
+    .pr-qs { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:.25rem .75rem; }
+    .pr-full { grid-column:1/-1; }
+    .pr-chips { display:flex; flex-wrap:wrap; gap:.4rem; }
+    .pr-chips label { display:inline-flex; gap:.3rem; align-items:center; padding:.3rem .6rem; border:1px solid var(--border); border-radius:999px; font-size:.8rem; color:var(--text-muted); cursor:pointer; }
+    .pr-decision { margin-top:1rem; border:1px solid var(--border); border-radius:var(--radius); padding:1.1rem; background:var(--bg-card); }
+    .pr-decision.buy { border-color:var(--accent); background:linear-gradient(135deg,var(--accent-dim),var(--bg-card)); }
+    .pr-decision.pass { border-color:var(--rose); background:linear-gradient(135deg,rgba(240,113,120,.14),var(--bg-card)); }
+    .pr-decision.pending { border-color:var(--amber); }
+    .pr-verdict { font-size:2.6rem; font-weight:800; letter-spacing:-.03em; font-family:var(--mono); line-height:1; }
+    .pr-decision.buy .pr-verdict { color:var(--accent); } .pr-decision.pass .pr-verdict { color:var(--rose); }
+    .pr-metrics { display:flex; flex-wrap:wrap; gap:1.25rem; margin:.7rem 0 .4rem; font-size:.82rem; color:var(--text-muted); }
+    .pr-metrics b { display:block; color:var(--text); font-family:var(--mono); font-size:1.05rem; }
+    .pr-why { font-size:.85rem; color:var(--text-muted); line-height:1.5; }
+    .pr-badge { display:inline-block; font-size:.7rem; padding:.15rem .5rem; border-radius:999px; background:var(--amber-dim); color:var(--amber); margin-left:.5rem; vertical-align:middle; }
+    .pr-badge.live { background:var(--accent-dim); color:var(--accent); }
+    .pr-empty { color:var(--text-dim); font-size:.85rem; text-align:center; padding:.8rem; }
+    .pr-table-wrap { overflow-x:hidden; width:100%; border:1px solid var(--border); border-radius:var(--radius); }
+    .pr-table { width:100%; border-collapse:collapse; font-size:.78rem; table-layout:fixed; }
+    .pr-table th { text-align:left; padding:.4rem .45rem; color:var(--text-dim); font-weight:600; border-bottom:1px solid var(--border); background:var(--bg-elevated); white-space:normal; font-size:.62rem; text-transform:uppercase; letter-spacing:.04em; }
+    .pr-table td { padding:.4rem .45rem; border-bottom:1px solid var(--border-subtle); vertical-align:top; }
+    .pr-table td.num { font-family:var(--mono); color:var(--accent); }
+    .pr-sig { font-size:.72rem; padding:.12rem .45rem; border-radius:999px; white-space:nowrap; }
+    .pr-sig.up { background:var(--accent-dim); color:var(--accent); } .pr-sig.down { background:rgba(240,113,120,.15); color:var(--rose); } .pr-sig.flat { background:var(--blue-dim); color:var(--blue); }
+    .pr-table a { color:var(--blue); }
+    .price-result { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
+    .price-result .big {
+      font-size: 2.25rem; font-weight: 700; font-family: var(--mono);
+      color: var(--accent); letter-spacing: -0.03em;
+    }
+    .price-result .range { font-size: 0.85rem; color: var(--text-muted); }
+    .price-result .detail {
+      width: 100%; font-size: 0.78rem; color: var(--text-dim); margin-top: 0.5rem; line-height: 1.5;
+    }
+
+    #toast-root {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;
+      display: flex; flex-direction: column; gap: 0.5rem;
+      max-width: min(380px, calc(100vw - 2rem)); pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto; background: var(--bg-card); border: 1px solid var(--border);
+      border-left: 3px solid var(--accent); border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem; box-shadow: var(--shadow); animation: toast-in 0.25s ease;
+    }
+    .toast.warn { border-left-color: var(--amber); }
+    .toast.info { border-left-color: var(--blue); }
+    .toast .toast-title { font-size: 0.85rem; font-weight: 650; margin-bottom: 0.15rem; }
+    .toast .toast-body { font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; }
+    .toast .toast-close {
+      float: right; background: none; border: none; color: var(--text-dim);
+      cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0 0 0.5rem;
+    }
+    .toast .toast-close:hover { color: var(--text); }
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); z-index: 900;
+      display: grid; place-items: center; padding: 1rem; opacity: 0; visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+    .modal-backdrop.open { opacity: 1; visibility: visible; }
+    .modal {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.4rem; max-width: 420px; width: 100%; box-shadow: var(--shadow);
+      transform: scale(0.96); transition: transform 0.2s;
+    }
+    .modal-backdrop.open .modal { transform: scale(1); }
+    .modal h3 { font-size: 1.05rem; font-weight: 650; margin-bottom: 0.45rem; }
+    .modal p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.55; margin-bottom: 0.85rem; }
+    .modal .field { margin-bottom: 1rem; }
+    .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+    @media (max-width: 800px) {
+      .pipeline { grid-template-columns: 1fr; }
+      .today-strip { grid-template-columns: repeat(2, 1fr); }
+      .tools-strip { grid-template-columns: 1fr; }
+      .user-meta { text-align: left; }
+      .tool-panel .row-2 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .wrap { padding: 1rem 0.85rem 2rem; }
+      .brand h1 { font-size: 1.15rem; }
+      .nav-tools { width: 100%; }
+      .nav-btn { flex: 1; text-align: center; }
+    }
+
+    /* Route Planning sections */
+
+    .route-top-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.15fr);
+      gap: 1.15rem;
+      margin-bottom: 1.15rem;
+      align-items: stretch;
+    }
+    .route-top-grid > .route-section {
+      margin-bottom: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .route-top-grid > .route-section .section-body {
+      flex: 1;
+    }
+    .route-top-grid #route-map {
+      height: 100%;
+      min-height: 320px;
+    }
+    .route-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 1.15rem;
+      overflow: hidden;
+    }
+    .route-section .section-head {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 0.65rem; padding: 0.85rem 1.15rem; border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+    }
+    .route-section .section-head h3 {
+      font-size: 0.9rem; font-weight: 650; letter-spacing: -0.01em;
+    }
+    .route-section .section-head .sub {
+      font-size: 0.72rem; color: var(--text-dim); font-weight: 400; margin-left: 0.4rem;
+    }
+    .route-section .section-body { padding: 1.15rem 1.2rem; }
+    .route-section .section-body.tight { padding: 0; }
+
+    /* Starting location — clean form layout */
+    .route-loc-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+      height: 100%;
+    }
+    .route-loc-form .field {
+      margin-bottom: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      min-width: 0;
+    }
+    .route-loc-form label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin: 0;
+      line-height: 1.2;
+    }
+    .route-loc-form .label-opt {
+      text-transform: none;
+      font-weight: 500;
+      letter-spacing: 0;
+      opacity: 0.7;
+    }
+    .route-loc-form .field-hint {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+      margin: 0;
+    }
+    .route-loc-form .field-hint code {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 0.05rem 0.3rem;
+      border-radius: 4px;
+    }
+    .route-loc-form input,
+    .route-loc-form select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      padding: 0.65rem 0.8rem;
+      outline: none;
+      transition: border-color 0.15s;
+      min-height: 42px;
+    }
+    .route-loc-form input:focus,
+    .route-loc-form select:focus {
+      border-color: rgba(61, 214, 140, 0.5);
+    }
+    .route-loc-form select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='%238b9bb0'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      padding-right: 2rem;
+    }
+
+    .addr-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .addr-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.65rem;
+      align-items: stretch;
+    }
+    .addr-row input {
+      min-width: 0;
+    }
+    .btn-locate {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+      padding: 0.65rem 0.95rem;
+      min-height: 42px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+
+    .end-block { display: flex; flex-direction: column; gap: 0.4rem; }
+    .end-row { display: flex; gap: 0.5rem; align-items: stretch; }
+    .end-row input { flex: 1; min-width: 0; }
+    .same-as-start {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.75rem; color: var(--text-muted); font-weight: 500;
+      text-transform: none; letter-spacing: 0; cursor: pointer;
+      margin-top: 0.15rem;
+    }
+    .same-as-start input { width: auto; accent-color: var(--accent); }
+    .route-estimate {
+      margin-top: 0.85rem;
+      padding: 0.75rem 0.9rem;
+      border-radius: var(--radius-sm);
+      background: var(--accent-dim);
+      border: 1px solid rgba(61, 214, 140, 0.28);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .route-estimate strong { color: var(--accent); font-weight: 650; }
+    .route-estimate.warn {
+      background: var(--amber-dim);
+      border-color: rgba(245, 185, 66, 0.35);
+    }
+    .route-estimate.warn strong { color: var(--amber); }
+    .route-estimate.over {
+      background: rgba(240, 113, 120, 0.12);
+      border-color: rgba(240, 113, 120, 0.35);
+    }
+    .route-estimate.over strong { color: var(--rose); }
+    .stops-estimate-banner {
+      padding: 0.75rem 1.15rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      line-height: 1.45;
+    }
+    .stops-estimate-banner strong { color: var(--text); }
+    .stops-estimate-banner.warn { color: var(--amber); }
+    .stops-estimate-banner.warn strong { color: var(--amber); }
+    .stops-estimate-banner.over { color: var(--rose); }
+    .stops-estimate-banner.over strong { color: var(--rose); }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.9rem 1rem;
+    }
+
+    .route-form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      align-items: center;
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .route-form-actions .btn {
+      min-height: 40px;
+      padding: 0.55rem 1rem;
+      font-size: 0.8rem;
+    }
+    .route-form-actions .btn-primary {
+      min-width: 7.5rem;
+    }
+
+    .loc-feedback {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-height: 0;
+    }
+    .loc-error {
+      font-size: 0.78rem;
+      color: var(--rose);
+      display: none;
+      line-height: 1.4;
+    }
+    .loc-error.visible { display: block; }
+    .loc-status {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-family: var(--mono);
+      line-height: 1.35;
+      min-height: 1.1em;
+    }
+    .loc-status.ok { color: var(--accent); }
+    .loc-status:empty { display: none; }
+
+    #route-map {
+      height: 340px; width: 100%; background: #0c0f14;
+    }
+    #route-map.dark-tiles .leaflet-tile-pane {
+      filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.95) saturate(0.55);
+    }
+    #route-map.dark-tiles .leaflet-container { background: #0c0f14; }
+    .route-map-foot {
+      padding: 0.55rem 1.15rem; font-size: 0.7rem; color: var(--text-dim);
+      border-top: 1px solid var(--border-subtle);
+      display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between;
+    }
+
+    .leaflet-container { font-family: var(--font); background: #0c0f14; }
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-card); color: var(--text); border-radius: 8px; box-shadow: var(--shadow);
+    }
+    .leaflet-popup-tip { background: var(--bg-card); }
+    .leaflet-popup-content { margin: 0.55rem 0.75rem; font-size: 0.8rem; }
+    .start-marker, .stop-marker { background: transparent; border: none; }
+    .pin {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 0.7rem; font-weight: 700;
+      font-family: var(--mono); color: #0a1a12;
+      box-shadow: 0 0 0 2px rgba(61, 214, 140, 0.35), 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .pin.start { background: var(--accent); color: #0a1a12; }
+    .pin.stop { background: var(--accent); color: #0a1a12; }
+    .pin.start, .pin.end, .pin.startend { width: 32px; height: 32px; color: #fff; font-size: 0.68rem; border: 2px solid #fff; }
+    .pin.start { background: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.4), 0 2px 8px rgba(0,0,0,0.5); }
+    .pin.end { background: #a855f7; box-shadow: 0 0 0 2px rgba(168,85,247,0.4), 0 2px 8px rgba(0,0,0,0.5); }
+    .pin.startend { background: linear-gradient(90deg, #3b82f6 0 50%, #a855f7 50% 100%); box-shadow: 0 0 0 2px rgba(140,110,250,0.4), 0 2px 8px rgba(0,0,0,0.5); letter-spacing: 1px; }
+
+    .stops-meta {
+      display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+      padding: 0.75rem 1.15rem; border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.8rem; color: var(--text-muted);
+    }
+    .stops-meta strong { color: var(--text); }
+    table.stops-table {
+      width: 100%; border-collapse: collapse; font-size: 0.78rem; table-layout: fixed;
+    }
+    table.stops-table th {
+      text-align: left; padding: 0.45rem 0.4rem; font-size: 0.6rem;
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim);
+      font-weight: 600; background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border-subtle); white-space: normal;
+    }
+    table.stops-table td {
+      padding: 0.5rem 0.4rem; border-bottom: 1px solid var(--border-subtle);
+      vertical-align: middle; word-wrap: break-word; overflow-wrap: anywhere;
+    }
+    table.stops-table th:nth-child(1), table.stops-table td:nth-child(1) { width: 1.6rem; }
+    table.stops-table th:nth-child(2), table.stops-table td:nth-child(2) { width: 2rem; }
+    table.stops-table th:nth-child(4), table.stops-table td:nth-child(4),
+    table.stops-table th:nth-child(5), table.stops-table td:nth-child(5),
+    table.stops-table th:nth-child(6), table.stops-table td:nth-child(6) { width: 4.2rem; }
+    table.stops-table th:nth-child(7), table.stops-table td:nth-child(7) { width: 7rem; }
+    table.stops-table th:nth-child(8), table.stops-table td:nth-child(8) { width: 9.5rem; }
+    table.stops-table th:nth-child(9), table.stops-table td:nth-child(9) { width: 3.2rem; }
+    table.stops-table th:nth-child(10), table.stops-table td:nth-child(10) { width: 5.5rem; }
+    table.stops-table tr:last-child td { border-bottom: none; }
+    table.stops-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+    .pit-badge{display:inline-block;font-size:0.7rem;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}
+    .pit-badge.gas{background:#f59e0b;color:#1a1300}
+    .pit-badge.food{background:#e11d48;color:#fff}
+    .pit-badge.sheetz,.pit-badge.wawa,.pit-badge.exxon,.pit-badge.shell,.pit-badge.bp,.pit-badge.circlek,.pit-badge.seveneleven{background:#f59e0b;color:#1a1300}
+    .pit-badge.chickfila,.pit-badge.mcdonalds,.pit-badge.wendys,.pit-badge.tacobell,.pit-badge.subway,.pit-badge.chipotle,.pit-badge.starbucks{background:#e11d48;color:#fff}
+    .pin.pit{border-radius:8px;font-size:18px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:3px solid #fff;box-shadow:0 0 0 3px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.6)}
+    .pin.pit.gas{background:#f59e0b}
+    tr.pit-placeholder-row td{background:rgba(245,158,11,0.08);border-top:1px dashed #f59e0b;border-bottom:1px dashed #f59e0b}
+    .pin.pit.food{background:#e11d48}
+    .drag-handle{cursor:grab;color:var(--text-dim);font-size:1rem;user-select:none;padding:0 0.25rem;line-height:1}
+    .drag-handle:active{cursor:grabbing}
+    tr.dragging{opacity:0.45}
+    tr.drag-over{outline:2px dashed var(--accent);outline-offset:-2px}
+    .stops-head-actions{display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center}
+    .btn-insert-pit{font-size:0.72rem;padding:0.2rem 0.45rem;min-height:0;line-height:1.2}
+    .pit-modal-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;
+      display:flex;align-items:center;justify-content:center;padding:1rem;
+      opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s;
+    }
+    .pit-modal-backdrop.open{opacity:1;visibility:visible}
+    .pit-modal{
+      background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+      width:min(520px,100%);max-height:min(80vh,640px);display:flex;flex-direction:column;
+      box-shadow:var(--shadow);
+    }
+    .pit-modal h3{font-size:1.05rem;font-weight:650;padding:1rem 1.15rem 0.35rem;margin:0}
+    .pit-modal .pit-modal-note{font-size:0.78rem;color:var(--text-muted);padding:0 1.15rem 0.75rem;line-height:1.45}
+    .pit-modal-filters{display:flex;gap:0.5rem;padding:0 1.15rem 0.65rem;flex-wrap:wrap}
+    .pit-modal-filters button{font-size:0.75rem}
+    .pit-modal-filters button.active{background:var(--accent);color:#0a1a12;border-color:var(--accent)}
+    .pit-candidate-list{overflow:auto;flex:1;padding:0 0.65rem 0.65rem;display:flex;flex-direction:column;gap:0.4rem}
+    .pit-candidate{
+      text-align:left;background:var(--bg-elevated);border:1px solid var(--border-subtle);
+      border-radius:8px;padding:0.65rem 0.75rem;cursor:pointer;color:var(--text);
+      transition:border-color .12s,background .12s;
+    }
+    .pit-candidate:hover{border-color:var(--accent);background:rgba(61,214,140,0.06)}
+    .pit-candidate .pc-name{font-weight:650;font-size:0.88rem}
+    .pit-candidate .pc-meta{font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem}
+    .pit-candidate .pc-detour{font-size:0.72rem;color:var(--amber);font-family:var(--mono);margin-top:0.15rem}
+    .pit-modal-actions{display:flex;justify-content:flex-end;gap:0.5rem;padding:0.75rem 1.15rem;border-top:1px solid var(--border-subtle)}
+    table.stops-table tr.skipped {
+      opacity: 0.45;
+      background: rgba(240, 113, 120, 0.06);
+    }
+    table.stops-table tr.skipped .stop-name {
+      text-decoration: line-through; color: var(--text-dim);
+    }
+    table.stops-table .stop-name { font-weight: 650; }
+    table.stops-table .stop-addr { font-size: 0.78rem; color: var(--text-muted); }
+    table.stops-table .stop-hours { font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted); white-space: normal; }
+    table.stops-table .stop-notes { font-size: 0.7rem; color: var(--amber); }
+    table.stops-table .stop-num {
+      font-family: var(--mono); font-weight: 600; color: var(--accent); width: 2.5rem;
+    }
+    table.stops-table .skip-cell { text-align: center; }
+    table.stops-table .skip-toggle {
+      appearance: none; width: 1.15rem; height: 1.15rem; border-radius: 4px;
+      border: 1.5px solid var(--border); background: var(--bg); cursor: pointer;
+      vertical-align: middle; position: relative;
+    }
+    table.stops-table .skip-toggle:checked {
+      background: var(--rose); border-color: var(--rose);
+    }
+    table.stops-table .skip-toggle:checked::after {
+      content: "×"; position: absolute; inset: 0; display: grid; place-items: center;
+      color: #fff; font-size: 0.85rem; font-weight: 700; line-height: 1;
+    }
+    table.stops-table a.stop-link { color: var(--accent); font-size: 0.75rem; font-weight: 600; }
+    .stops-empty {
+      padding: 2rem 1.15rem; text-align: center; color: var(--text-dim); font-size: 0.85rem;
+    }
+    @media (max-width: 900px) {
+      .route-top-grid { grid-template-columns: 1fr; }
+      .meta-grid { grid-template-columns: 1fr 1fr; }
+      .route-top-grid #route-map, #route-map { height: 280px; min-height: 280px; }
+    }
+    @media (max-width: 520px) {
+      .addr-row { grid-template-columns: 1fr; }
+      .btn-locate { width: 100%; }
+      .meta-grid { grid-template-columns: 1fr; }
+      .route-form-actions .btn { flex: 1 1 auto; }
+    }
+
+    .tool-card.rcpt .tool-icon, .tool-hero.rcpt .tool-hero-icon { background: var(--purple-dim); }
+    .rc-days { font-family: var(--mono); }
+    /* Stars always on one horizontal line */
+    .rc-stars {
+      display: inline-flex; flex-direction: row; flex-wrap: nowrap; align-items: center;
+      white-space: nowrap; min-width: 0; gap: 0; max-width: 100%;
+    }
+    .rc-stars button {
+      display: inline-block; flex: 0 0 auto; background: none; border: 0; padding: 0; margin: 0;
+      cursor: pointer; font-size: 1.05em; line-height: 1; color: #555; width: 1.05em; height: auto;
+    }
+    .rc-stars button.on { color: #f5c518; }
+    .rc-stars-row {
+      display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.25rem;
+    }
+    .rc-stars-glyphs { white-space: nowrap; flex-shrink: 0; }
+    .rc-low-skip {
+      background: #e5484d; color: #fff; border-radius: 4px; padding: 0 .3rem; font-size: .85em;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    table.stops-table .stop-receipts {
+      font-size: 0.7rem; color: var(--text); vertical-align: top;
+    }
+    table.stops-table .stop-receipts .rc-stars-row { margin: 0.15rem 0; }
+    .pr-table td.rc-stars { white-space: nowrap; width: 5.5rem; vertical-align: middle; overflow: hidden; }
+    .pr-table th.rc-rating, .pr-table td.rc-stars { width: 5.5rem; }
+    .pr-table th.rc-notes-col, .pr-table td.rc-notes-cell { width: 12%; }
+    .pr-table th.rc-num, .pr-table td.rc-num { width: 4.5rem; }
+    .pr-table th.rc-visits, .pr-table td.rc-visits { width: 3rem; }
+    .pr-table th.rc-days-col, .pr-table td.rc-days { width: 3.5rem; }
+    .pr-table th.rc-last, .pr-table td.rc-last { width: 4.5rem; }
+    .rc-notes { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; min-height: 2.2em; font: inherit; font-size: .85em; background: transparent; color: inherit; border: 1px solid rgba(255,255,255,.15); border-radius: 6px; padding: .25rem .35rem; resize: vertical; }
+    .rc-loc-addr { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; line-height: 1.3; }
+    /* comps column widths */
+    .pr-table.comps-table th:nth-child(2), .pr-table.comps-table td:nth-child(2) { width: 4.5rem; }
+    .pr-table.comps-table th:nth-child(3), .pr-table.comps-table td:nth-child(3) { width: 6.5rem; }
+    .pr-table.comps-table th:nth-child(4), .pr-table.comps-table td:nth-child(4) { width: 5rem; }
+    .pr-table.comps-table th:nth-child(5), .pr-table.comps-table td:nth-child(5) { width: 10.5rem; }
+    .pr-table.comps-table th:nth-child(6), .pr-table.comps-table td:nth-child(6) { width: 4.5rem; }
+    .rc-days.fresh { color: var(--accent); } .rc-days.mid { color: var(--amber); } .rc-days.stale { color: var(--rose); }
+    .rc-tag { font-size:.68rem; color:var(--text-dim); border:1px solid var(--border); border-radius:6px; padding:0 4px; margin-left:4px; }
+    .pr-table input.rc-in { width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:.25rem .4rem; font:inherit; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">⛳</div>
+        <div>
+          <h1>Polo Pipeline</h1>
+          <p class="subtitle">Golf-polo reselling control panel</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <nav class="nav-tools" aria-label="Views">
+          <button type="button" class="nav-btn active" data-view="home" id="nav-home">Pipeline</button>
+          <button type="button" class="nav-btn tool" data-view="route" id="nav-route">Route Planning</button>
+          <button type="button" class="nav-btn tool" data-view="receipts" id="nav-receipts">Receipt Tracker</button>
+          <button type="button" class="nav-btn tool quick" data-view="pricing" id="nav-pricing">Pricing</button>
+        </nav>
+        <div class="user-meta">
+          <div><strong>Polo Pipeline</strong></div>
+          <div id="home-label">EXAMPLE data · Columbus, OH</div>
+          <div style="margin-top:0.25rem;display:flex;gap:0.35rem;flex-wrap:wrap;justify-content:flex-end">
+            <span class="demo-badge">Demo data</span>
+            <span class="live-badge off" id="bridge-badge"><span class="dot"></span><span id="bridge-badge-text">Bridge offline</span></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="view active" id="view-home" role="main">
+      <div class="live-strip" id="live-strip" aria-label="Live handoff status">
+        <div class="live-left">
+          <span class="live-stat">Pending handoffs: <strong id="pending-count">0</strong></span>
+          <span class="live-snippet" id="last-result-snippet">No results yet</span>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-refresh-handoffs">Refresh</button>
+        <p class="live-hint">App Builder watches <code id="watch-path">var/handoffs/pending</code>.</p>
+      </div>
+
+      <p class="section-label">Today</p>
+      <div class="today-strip" id="today-strip" aria-label="Today summary"></div>
+
+      <p class="section-label">Everyday pipeline</p>
+      <div class="pipeline" id="pipeline" role="list"></div>
+
+      <p class="section-label">On-demand tools</p>
+      <div class="tools-strip">
+        <button type="button" class="tool-card route" data-goto="route">
+          <div class="tool-card-inner">
+            <div class="tool-icon" aria-hidden="true">🗺️</div>
+            <div class="tool-copy">
+              <h3>Route Planning</h3>
+              <p>Thrift Router · ~8-stop thrift runs</p>
+            </div>
+          </div>
+          <span class="tool-arrow" aria-hidden="true">→</span>
+        </button>
+        <button type="button" class="tool-card price" data-goto="pricing">
+          <div class="tool-card-inner">
+            <div class="tool-icon" aria-hidden="true">💵</div>
+            <div class="tool-copy">
+              <h3>Pricing</h3>
+              <p>Polo Pricing · on-demand shirt comps</p>
+            </div>
+          </div>
+          <span class="tool-arrow" aria-hidden="true">→</span>
+        </button>
+        <button type="button" class="tool-card rcpt" data-goto="receipts">
+          <div class="tool-card-inner">
+            <div class="tool-icon" aria-hidden="true">🧾</div>
+            <div class="tool-copy">
+              <h3>Receipt Tracker</h3>
+              <p>Spend by store · days since last visit</p>
+            </div>
+          </div>
+          <span class="tool-arrow" aria-hidden="true">→</span>
+        </button>
+      </div>
+
+      <div class="panel" id="handoff-panel">
+        <div class="panel-head">
+          <h2>Handoff inbox <span class="muted" id="handoff-count"></span></h2>
+          <button type="button" class="btn btn-ghost" id="btn-refresh-handoffs-2">Refresh</button>
+        </div>
+        <div class="handoff-note">
+          Live actions write job files under <code>var/handoffs/pending/</code>. App Builder picks them up,
+          messages the target bot, then writes results to <code>var/handoffs/done/</code>.
+          Start the bridge with <code>python3 app/server.py</code> (port 8765).
+        </div>
+        <ul class="handoff-list" id="handoff-list"></ul>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Inventory <span class="muted" id="inv-count"></span></h2>
+          <button type="button" class="btn btn-ghost" id="btn-reset">Reset demo</button>
+        </div>
+        <div class="table-wrap">
+          <table class="inv" aria-label="Everyday shirt inventory">
+            <thead>
+              <tr>
+                <th>Shirt</th>
+                <th>Size</th>
+                <th>Color</th>
+                <th>Est. price</th>
+                <th>Stage</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inv-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <footer class="how">
+        <h3>How this connects</h3>
+        <p>
+          Everyday pipeline: Intake → List → Sold via <strong>Polo Listing Bot</strong>.
+          <strong>Thrift Router</strong> and <strong>Polo Pricing</strong> are on-demand tools.
+          When the bridge server is running, live buttons queue handoffs for App Builder to relay to those bots.
+        </p>
+        <div class="bots">
+          <span class="bot-chip">Polo Listing Bot</span>
+          <span class="bot-chip">Thrift Router</span>
+          <span class="bot-chip">Polo Pricing</span>
+        </div>
+      </footer>
+    </div>
+
+    <div class="view" id="view-route" role="main" hidden>
+      <button type="button" class="back-link" data-view="home">← Back to Pipeline</button>
+      <div class="tool-view-header">
+        <div class="tool-hero route">
+          <div class="tool-hero-icon" aria-hidden="true">🗺️</div>
+          <div>
+            <h2>Route Planning</h2>
+            <p class="bot-tag">Powered by <strong>Thrift Router</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- A+B: Location + map side by side -->
+      <div class="route-top-grid">
+      <!-- A: Starting location -->
+      <section class="route-section" aria-labelledby="route-loc-title">
+        <div class="section-head">
+          <h3 id="route-loc-title">Starting location <span class="sub">where the thrift run begins</span></h3>
+        </div>
+        <div class="section-body">
+          <div class="route-loc-form">
+            <div class="addr-block">
+              <label for="route-start">Starting address</label>
+              <div class="addr-row">
+                <input id="route-start" type="text" placeholder="e.g. 123 Main St, Columbus, OH" value="EXAMPLE start · Downtown Columbus, OH" autocomplete="street-address" />
+                <button type="button" class="btn btn-secondary btn-locate" id="btn-use-location" title="Use phone or browser GPS">📍 Use my location</button>
+              </div>
+              <p class="field-hint">Full address, city, or ZIP — sent to Thrift Router as <code>start</code>. GPS works best on phone over HTTPS or localhost.</p>
+              <div class="loc-feedback">
+                <div class="loc-error" id="loc-error" role="alert"></div>
+                <div class="loc-status" id="loc-status"></div>
+              </div>
+            </div>
+
+            <div class="end-block">
+              <label for="route-end">End point</label>
+              <div class="end-row">
+                <input id="route-end" type="text" placeholder="Where you finish (e.g. home)" value="EXAMPLE start · Downtown Columbus, OH" autocomplete="street-address" />
+              </div>
+              <label class="same-as-start"><input type="checkbox" id="route-end-same" /> Same as start</label>
+              <p class="field-hint">Where you want to finish (e.g. home). Maps URL uses origin=start, destination=end.</p>
+            </div>
+
+            <div class="meta-grid">
+              <div class="field">
+                <label for="route-start-time">Start time</label>
+                <input id="route-start-time" type="time" />
+              </div>
+              <div class="field">
+                <label for="route-duration">Time available</label>
+                <select id="route-duration">
+                  <option value="1">1 hour</option>
+                  <option value="2">2 hours</option>
+                  <option value="3" selected>3 hours</option>
+                  <option value="4">4 hours</option>
+                  <option value="custom">Custom…</option>
+                </select>
+              </div>
+              <div class="field" id="route-duration-custom-wrap" hidden>
+                <label for="route-duration-custom">Custom hours</label>
+                <input id="route-duration-custom" type="number" min="0.5" max="12" step="0.5" value="3" />
+              </div>
+              <div class="field">
+                <label for="route-dwell">Minutes per stop</label>
+                <input id="route-dwell" type="number" min="5" max="90" step="5" value="20" />
+                <p class="field-hint">Browsing / dwell time at each thrift stop.</p>
+              </div>
+              <div class="field">
+                <label for="route-zip">ZIP <span class="label-opt">(optional)</span></label>
+                <input id="route-zip" type="text" inputmode="numeric" placeholder="ZIP" value="" />
+              </div>
+              <div class="field">
+                <label for="route-stops">Stops</label>
+                <select id="route-stops">
+                  <option value="6">6 stops</option>
+                  <option value="8" selected>8 stops</option>
+                  <option value="10">10 stops</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="route-day">Day <span class="label-opt">(optional)</span></label>
+                <input id="route-day" type="text" placeholder="today" value="today" />
+              </div>
+              <div class="field">
+                <label for="route-focus">Focus</label>
+                <select id="route-focus">
+                  <option value="golf" selected>Premium golf polos</option>
+                  <option value="mixed">Mixed athletic</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="same-as-start" style="font-size:0.8rem;color:var(--text)"><input type="checkbox" id="route-nonconv" /> Include non-conventional stops</label>
+              <p class="field-hint">Off: clothing-heavy thrift &amp; resale only. On: also church thrifts, mixed thrift, Habitat/furniture-adjacent and small local shops that may carry adult clothing / golf polos (avoids antique- or furniture-only).</p>
+            </div>
+
+            <div class="route-estimate" id="route-estimate" aria-live="polite">Fill time window to see fit estimate.</div>
+
+            <div class="route-form-actions">
+              <button type="button" class="btn btn-primary" id="btn-plan-route">Plan a route</button>
+              <button type="button" class="btn btn-secondary" id="btn-plan-route-demo">Demo only</button>
+              <button type="button" class="btn btn-ghost" id="btn-load-live-route">Load latest live route</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- B: Map -->
+      <section class="route-section" aria-labelledby="route-map-title">
+        <div class="section-head">
+          <h3 id="route-map-title">Route map <span class="sub" id="map-status">EXAMPLE area</span></h3>
+          <div id="route-maps-link" class="route-maps-bar" aria-live="polite"></div>
+        </div>
+        <div class="section-body tight">
+          <div id="route-map" role="img" aria-label="Thrift route map"></div>
+          <div class="route-map-foot">
+            <span>OSM · OSRM road route · green thrift · amber gas · red food</span>
+          </div>
+        </div>
+      </section>
+      </div>
+
+      <!-- C: Stops table -->
+      <section class="route-section" aria-labelledby="route-stops-title">
+        <div class="section-head">
+          <h3 id="route-stops-title">Stops <span class="sub" id="route-result-title">No plan loaded yet</span></h3>
+          <div class="stops-head-actions">
+            <button type="button" class="btn btn-secondary" id="btn-insert-pit" title="Insert a national-chain gas or food pit stop">+ Pit stop</button>
+            <button type="button" class="btn btn-secondary" id="btn-skip-recent" title="Skip stops you visited in the last 14 days (from Receipt Tracker)">Skip recent (≤14d)</button>
+            <button type="button" class="btn btn-ghost" id="btn-clear-skips" title="Un-skip all stops">Clear skips</button>
+          </div>
+        </div>
+        <div class="stops-meta" id="route-receipt-banner" style="display:none;border-left:3px solid #f5a623;padding-left:.6rem;margin-bottom:.4rem"></div>
+        <div class="stops-meta" id="route-summary">Plan a route or load the latest live Thrift Router result.</div>
+        <div class="section-body tight" style="overflow-x:hidden">
+          <table class="stops-table" aria-label="Route stops">
+            <thead>
+              <tr>
+                <th></th>
+                <th>#</th>
+                <th>Stop</th>
+                <th>Hours</th>
+                <th class="col-arrive">Arrive</th>
+                <th class="col-leave">Leave</th>
+                <th>Notes</th>
+                <th title="From Receipt Tracker">🧾 Receipts</th>
+                <th class="skip-cell">Skip</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="stops-tbody">
+              <tr><td colspan="10" class="stops-empty">Stops will appear here after you plan or load a route.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="view" id="view-pricing" role="main" hidden>
+      <button type="button" class="back-link" data-view="home">← Back to Pipeline</button>
+      <div class="tool-view-header">
+        <div class="tool-hero price">
+          <div class="tool-hero-icon" aria-hidden="true">💵</div>
+          <div>
+            <h2>Pricing</h2>
+            <p class="bot-tag">Powered by <strong>Polo Pricing</strong> · photos → questions → buy or pass</p>
+          </div>
+        </div>
+      </div>
+      <div class="tool-panel pr-wrap">
+        <div class="pr-step"><span class="pr-num">1</span> Photos <span class="pr-hint">front + tag work best · multiple OK</span></div>
+        <div id="pr-drop" class="pr-drop" tabindex="0">
+          <div class="pr-drop-empty" id="pr-drop-empty">
+            <div style="font-size:1.8rem">📷</div>
+            <strong>Drop photos here</strong> or <button type="button" class="btn btn-secondary btn-sm" id="pr-browse">Choose files</button>
+            <div class="pr-hint">No photos yet — add at least one to get a decision.</div>
+          </div>
+          <div class="pr-thumbs" id="pr-thumbs"></div>
+          <input type="file" id="pr-file" accept="image/*" multiple hidden />
+        </div>
+
+        <div class="pr-step"><span class="pr-num">2</span> Quick questions</div>
+        <div class="pr-qs">
+          <div class="field"><label for="price-market">Where you'd sell</label>
+            <select id="price-market"><option selected>eBay</option><option>Poshmark</option><option>Mercari</option><option>Depop</option></select></div>
+          <div class="field"><label for="price-ask">Asking price ($)</label>
+            <input id="price-ask" type="number" min="0" step="0.5" placeholder="e.g. 8" /></div>
+        </div>
+        <div class="pr-qs">
+          <div class="field"><label for="price-brand">Brand / style line</label>
+            <input id="price-brand" type="text" placeholder="e.g. Peter Millar Summer Comfort" /></div>
+          <div class="field"><label for="price-size">Size</label>
+            <select id="price-size"><option>XS</option><option>S</option><option selected>M</option><option>L</option><option>XL</option><option>XXL</option><option>3XL</option></select></div>
+          <div class="field"><label for="price-condition">Condition</label>
+            <select id="price-condition"><option>New with tags</option><option>Like new</option><option selected>Good</option><option>Fair</option></select></div>
+          <div class="field pr-full"><label>Any defects?</label>
+            <div class="pr-chips" id="pr-defects">
+              <label><input type="checkbox" value="none" checked /> None</label>
+              <label><input type="checkbox" value="stain" /> Stain</label>
+              <label><input type="checkbox" value="pilling" /> Pilling</label>
+              <label><input type="checkbox" value="hole" /> Hole / snag</label>
+              <label><input type="checkbox" value="fading" /> Fading</label>
+              <label><input type="checkbox" value="collar curl" /> Collar curl</label>
+            </div></div>
+          <div class="field pr-full"><label for="price-notes">Color / logo / notes (optional)</label>
+            <input id="price-notes" type="text" placeholder="e.g. lavender micro-stripe, club monogram" /></div>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="btn-get-price">Should I buy it?</button>
+          <button type="button" class="btn btn-secondary" id="btn-price-reset">Clear</button>
+        </div>
+
+        <div class="pr-decision" id="pr-decision">
+          <div class="pr-empty">Upload photos and answer the questions — your <strong>BUY / PASS</strong> call shows up here.</div>
+        </div>
+
+        <div class="pr-step"><span class="pr-num">3</span> Comps behind the decision <span class="pr-hint" id="pr-comps-src"></span></div>
+        <div class="pr-table-wrap">
+          <table class="pr-table comps-table">
+            <thead><tr><th>Item</th><th>Price</th><th>Status / date</th><th>Condition</th><th>Signal</th><th>Link</th></tr></thead>
+            <tbody id="pr-comps"><tr><td colspan="6" class="pr-empty">No comps yet.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view-receipts" role="main" hidden>
+      <button type="button" class="back-link" data-view="home">← Back to Pipeline</button>
+      <div class="tool-view-header"><div class="tool-hero rcpt">
+        <div class="tool-hero-icon" aria-hidden="true">🧾</div>
+        <div><h2>Receipt Tracker</h2><p class="bot-tag">Snap a receipt → store, date, items, total · spend &amp; days-since by location</p></div>
+      </div></div>
+      <div class="tool-panel pr-wrap">
+        <div class="pr-step"><span class="pr-num">1</span> Receipt photo <span class="pr-hint">whole receipt, flat, good light · multiple shots of one receipt OK</span></div>
+        <div id="rc-drop" class="pr-drop" tabindex="0">
+          <div class="pr-drop-empty" id="rc-drop-empty"><div style="font-size:1.8rem">🧾</div>
+            <strong>Drop receipt photos here</strong> or <button type="button" class="btn btn-secondary btn-sm" id="rc-browse">Choose files</button></div>
+          <div class="pr-thumbs" id="rc-thumbs"></div>
+          <input type="file" id="rc-file" accept="image/*" multiple hidden />
+        </div>
+        <div class="pr-hint" id="rc-status" style="margin:6px 0"></div>
+        <div id="rc-form" hidden>
+          <div class="pr-step"><span class="pr-num">2</span> Check &amp; save</div>
+          <div class="pr-qs">
+            <div class="field"><label for="rc-store">Store</label><input id="rc-store" type="text" /></div>
+            <div class="field"><label for="rc-date">Date</label><input id="rc-date" type="date" /></div>
+          </div>
+          <div class="pr-qs">
+            <div class="field pr-full"><label for="rc-address">Address</label><input id="rc-address" type="text" /></div>
+            <div class="field"><label for="rc-subtotal">Subtotal ($)</label><input id="rc-subtotal" type="number" step="0.01" /></div>
+            <div class="field"><label for="rc-tax">Tax ($)</label><input id="rc-tax" type="number" step="0.01" /></div>
+            <div class="field"><label for="rc-total">Total ($)</label><input id="rc-total" type="number" step="0.01" /></div>
+            <div class="field"><label for="rc-count">Items</label><input id="rc-count" type="number" step="1" min="0" /></div>
+          </div>
+          <div class="pr-table-wrap" style="margin:.5rem 0">
+            <table class="pr-table"><thead><tr><th>Line item</th><th>Qty</th><th>Unit $</th><th>Amount</th><th></th></tr></thead>
+            <tbody id="rc-lines"></tbody></table>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="btn btn-secondary btn-sm" id="rc-add-line">+ Line</button>
+            <button type="button" class="btn btn-primary" id="rc-save">Save receipt</button>
+            <button type="button" class="btn btn-secondary" id="rc-clear">Clear</button>
+          </div>
+        </div>
+        <div class="pr-step"><span class="pr-num">3</span> Spending by location <span class="pr-hint" id="rc-summary"></span></div>
+        <div class="pr-table-wrap">
+          <table class="pr-table" id="rc-table">
+            <thead><tr><th>Location</th><th class="rc-num">Spent</th><th class="rc-visits">Visits</th><th class="rc-last">Last</th><th class="rc-days-col">Days</th><th class="rc-visits">Items</th><th class="rc-num">Avg</th><th class="rc-rating">Rating</th><th class="rc-notes-col">Notes</th></tr></thead>
+            <tbody id="rc-stats"><tr><td colspan="9" class="pr-empty">No receipts yet — drop a receipt photo above.</td></tr></tbody>
+          </table>
+        </div>
+        <div class="pr-step" style="margin-top:1rem">Recent receipts</div>
+        <div class="pr-table-wrap"><table class="pr-table">
+          <thead><tr><th>Date</th><th>Store</th><th>Items</th><th>Total</th><th></th></tr></thead>
+          <tbody id="rc-recent"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-root" aria-live="polite"></div>
+
+  <div class="pit-modal-backdrop" id="pit-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="pit-modal-title">
+    <div class="pit-modal">
+      <h3 id="pit-modal-title">Insert pit stop</h3>
+      <p class="pit-modal-note" id="pit-modal-note">National-chain gas &amp; fast food only · ranked by low detour along the corridor between the surrounding stops.</p>
+      <div class="pit-modal-filters">
+        <button type="button" class="btn btn-ghost active" data-pit-filter="all">All</button>
+        <button type="button" class="btn btn-ghost" data-pit-filter="gas">⛽ Gas</button>
+        <button type="button" class="btn btn-ghost" data-pit-filter="food">🍔 Food</button>
+      </div>
+      <div class="pit-candidate-list" id="pit-candidate-list"></div>
+      <div class="pit-modal-actions">
+        <button type="button" class="btn btn-secondary" id="pit-modal-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <h3 id="modal-title">Confirm</h3>
+      <p id="modal-body"></p>
+      <div class="field" id="modal-extra" hidden>
+        <label for="modal-folder">Photo folder</label>
+        <input id="modal-folder" type="text" value="photos/inbox" />
+        <p class="hint">Folder Polo Listing Bot should scan.</p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="modal-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="modal-ok">Queue for App Builder</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const STORAGE_KEY = "polo-pipeline-inventory-v2";
+      const API_BASE = ""; // same origin when served by server.py
+
+      const STAGES = [
+        {
+          id: "intake",
+          name: "Intake / Photos",
+          bot: "Polo Listing Bot",
+          botColor: "#5b9fff",
+          action: "Process photos",
+          handoffAction: "process_photos",
+          confirmTitle: "Process photos",
+          confirmBody:
+            "Queue Polo Listing Bot (via App Builder) to process bulk photos: group by shirt and clean for eBay.",
+          needsFolder: true,
+        },
+        {
+          id: "list",
+          name: "List on eBay",
+          bot: "Polo Listing Bot",
+          botColor: "#5b9fff",
+          action: "Create listings",
+          handoffAction: "create_listings",
+          confirmTitle: "Create eBay listings",
+          confirmBody:
+            "Queue Polo Listing Bot (via App Builder) to draft/post listings for shirts ready to list.",
+          needsFolder: false,
+        },
+        {
+          id: "sold",
+          name: "Sold / Done",
+          bot: null,
+          botColor: "#3dd68c",
+          action: "Review sold",
+          handoffAction: null,
+          confirmTitle: "Review sold",
+          confirmBody: "No bot handoff — this stage only tracks completed sales in inventory.",
+          needsFolder: false,
+        },
+      ];
+
+      const STAGE_ORDER = ["intake", "list", "sold"];
+
+      const DEFAULT_INVENTORY = [
+        { id: "s1", brand: "Nike Golf", style: "Dri-FIT Tour", size: "L", color: "Navy", price: 28, stage: "list" },
+        { id: "s2", brand: "Peter Millar", style: "Summer Comfort", size: "M", color: "White", price: 42, stage: "list" },
+        { id: "s3", brand: "Titleist", style: "Players Performance", size: "XL", color: "Black", price: null, stage: "intake" },
+        { id: "s4", brand: "Under Armour", style: "Playoff 2.0", size: "L", color: "Heather Gray", price: 24, stage: "list" },
+        { id: "s5", brand: "Adidas", style: "Ultimate365", size: "M", color: "Forest Green", price: null, stage: "intake" },
+        { id: "s6", brand: "Nike", style: "Tiger Woods Collection", size: "L", color: "Red", price: 35, stage: "intake" },
+        { id: "s7", brand: "Peter Millar", style: "Perth Performance", size: "S", color: "Sky Blue", price: 38, stage: "sold" },
+        { id: "s8", brand: "Titleist", style: "Pro V1 Polo", size: "L", color: "White", price: 22, stage: "sold" },
+        { id: "s9", brand: "Under Armour", style: "Tech Polo", size: "XXL", color: "Charcoal", price: null, stage: "intake" },
+        { id: "s10", brand: "Adidas", style: "Go-To Polo", size: "M", color: "Burgundy", price: 26, stage: "list" },
+        { id: "s11", brand: "Nike Golf", style: "Victory Solid", size: "XL", color: "White", price: 26, stage: "sold" },
+        { id: "s12", brand: "Peter Millar", style: "Solid Performance", size: "L", color: "Olive", price: null, stage: "intake" },
+      ];
+
+      // EXAMPLE demo route: made-up stores in Columbus, OH so the map and route math work out of the box.
+      // Real runs come from Thrift Router via the handoff queue.
+      const DEMO_ROUTE = [
+        { id: "d1", name: "EXAMPLE Thrift · Short North", address: "EXAMPLE address · N High St, Columbus, OH", hours: "Thu 10–7", notes: "Closest to start", url: "", lat: 39.979, lng: -83.0035, example: true },
+        { id: "d2", name: "EXAMPLE Resale · Campus", address: "EXAMPLE address · near OSU, Columbus, OH", hours: "Thu 10–7", notes: "Student donations", url: "", lat: 40.005, lng: -83.009, example: true },
+        { id: "d3", name: "EXAMPLE Thrift · Clintonville", address: "EXAMPLE address · Clintonville, Columbus, OH", hours: "Thu 10–7", notes: "Big men's rack", url: "", lat: 40.04, lng: -83.015, example: true },
+        { id: "d4", name: "EXAMPLE Charity Store", address: "EXAMPLE address · north High St, Columbus, OH", hours: "Thu 10–5", notes: "Earliest close", url: "", lat: 40.062, lng: -83.02, example: true },
+        { id: "d5", name: "EXAMPLE Consignment", address: "EXAMPLE address · north side, Columbus, OH", hours: "Thu 10–9", notes: "Premium brands", url: "", lat: 40.059, lng: -82.97, example: true },
+        { id: "d6", name: "EXAMPLE Upscale Resale", address: "EXAMPLE address · northeast, Columbus, OH", hours: "Thu 10–8", notes: "Best premium-polo bet", url: "", lat: 40.03, lng: -82.955, example: true },
+        { id: "d7", name: "EXAMPLE Thrift Superstore", address: "EXAMPLE address · east side, Columbus, OH", hours: "Thu 10–7", notes: "Huge floor", url: "", lat: 39.995, lng: -82.945, example: true },
+        { id: "d8", name: "EXAMPLE Church Thrift", address: "EXAMPLE address · near downtown, Columbus, OH", hours: "Thu 10–7", notes: "Last stop, then back", url: "", lat: 39.97, lng: -82.96, example: true },
+      ];
+
+      // EXAMPLE start. Set POLO_HOME_LAT / POLO_HOME_LNG / POLO_HOME_LABEL on the server to use your own (no default).
+      const DEFAULT_START = { lat: 39.9612, lng: -82.9988, label: "EXAMPLE start · Downtown Columbus, OH" };
+      const PLAN_STORAGE_KEY = "polo-pipeline-route-plan-v3";
+
+      /** Known stop coords so the map works without Nominatim. EXAMPLE entries match DEMO_ROUTE. */
+      const LIVE_STOP_COORDS = DEMO_ROUTE.map(function (d) {
+        return { name: new RegExp(d.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), address: /(?!x)x/, lat: d.lat, lng: d.lng };
+      });
+
+      function lookupKnownCoords(name, address) {
+        const n = name || "";
+        const a = address || "";
+        for (let i = 0; i < LIVE_STOP_COORDS.length; i++) {
+          const row = LIVE_STOP_COORDS[i];
+          if (row.name.test(n) || row.address.test(a) || row.address.test(n + " " + a)) {
+            return { lat: row.lat, lng: row.lng };
+          }
+        }
+        // Exact address map (EXAMPLE addresses from DEMO_ROUTE)
+        const exact = {};
+        DEMO_ROUTE.forEach(function (d) { exact[d.address] = [d.lat, d.lng]; });
+        if (exact[a]) return { lat: exact[a][0], lng: exact[a][1] };
+        const norm = a.replace(/\s+/g, " ").trim().toLowerCase();
+        for (const key of Object.keys(exact)) {
+          if (key.toLowerCase() === norm) return { lat: exact[key][0], lng: exact[key][1] };
+        }
+        return null;
+      }
+
+      let startCoords = { lat: DEFAULT_START.lat, lng: DEFAULT_START.lng };
+      let endCoords = { lat: DEFAULT_START.lat, lng: DEFAULT_START.lng };
+      let routeMap = null;
+      let routeLayer = null;
+      let routeLineLayer = null;
+      let mapInited = false;
+      let pitInsertAfterIdx = -1; // insert after this index (-1 = before first / at end via header)
+      let pitFilter = "all";
+      let pitCandidatesCache = [];
+      let pitEmptyReason = "";
+      let osrmAbort = 0;
+      let lastOsrmStats = null; // {distanceMeters, durationSeconds}
+
+      // Optional home location from the server env (POLO_HOME_*). Without it the EXAMPLE start stays.
+      fetch(API_BASE + "/api/config").then(function (r) { return r.ok ? r.json() : null; }).then(function (cfg) {
+        if (!cfg || !cfg.home) return;
+        window.POLO_HOME = cfg.home;
+        const exampleLabel = DEFAULT_START.label;
+        DEFAULT_START.lat = cfg.home.lat; DEFAULT_START.lng = cfg.home.lng; DEFAULT_START.label = cfg.home.label;
+        ["route-start", "route-end"].forEach(function (id) {
+          const el = document.getElementById(id);
+          if (el && (!el.value || el.value === exampleLabel)) el.value = cfg.home.label;
+        });
+        startCoords = { lat: cfg.home.lat, lng: cfg.home.lng };
+        endCoords = { lat: cfg.home.lat, lng: cfg.home.lng };
+        const hl = document.getElementById("home-label");
+        if (hl) hl.textContent = cfg.home.label;
+      }).catch(function () {});
+      /** @type {{ id: string, source: string, title: string, summary: string, startLabel: string, mapsUrl: string|null, stops: Array }} */
+      let currentPlan = null;
+
+      const SOLD_THIS_WEEK = 5;
+      const ACTION_LABELS = {
+        plan_route: "Plan route",
+        process_photos: "Process photos",
+        create_listings: "Create listings",
+        get_price: "Get price",
+      };
+
+      let inventory = loadInventory();
+      let modalCallback = null;
+      let modalStage = null;
+      let bridgeOnline = false;
+      let handoffState = { pending: [], done: [], pendingCount: 0, watchPath: "var/handoffs/pending" };
+
+      function loadInventory() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length) {
+              return parsed.map((item) => {
+                if (typeof item.stage === "number") {
+                  const map = { 0: "intake", 1: "intake", 2: "list", 3: "list", 4: "sold" };
+                  item.stage = map[item.stage] || "intake";
+                }
+                if (!STAGE_ORDER.includes(item.stage)) item.stage = "intake";
+                return item;
+              });
+            }
+          }
+        } catch (_) {}
+        return DEFAULT_INVENTORY.map((x) => ({ ...x }));
+      }
+
+      function saveInventory() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory)); } catch (_) {}
+      }
+
+      function countByStage(stageId) {
+        return inventory.filter((s) => s.stage === stageId).length;
+      }
+
+      function esc(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      /** Display dates as m/d/yy (e.g. 10/1/26). Accepts YYYY-MM-DD, ISO datetime, or Date. */
+      function fmtDate(d) {
+        if (d == null || d === "") return "—";
+        var s = String(d).trim();
+        var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) {
+          return String(Number(m[2])) + "/" + String(Number(m[3])) + "/" + m[1].slice(2);
+        }
+        var dt = d instanceof Date ? d : new Date(s);
+        if (!isNaN(dt.getTime())) {
+          return (dt.getMonth() + 1) + "/" + dt.getDate() + "/" + String(dt.getFullYear()).slice(2);
+        }
+        return s;
+      }
+
+      /* ——— API / handoffs ——— */
+      async function api(path, options) {
+        const res = await fetch(API_BASE + path, options);
+        if (!res.ok) {
+          let msg = res.statusText;
+          try {
+            const err = await res.json();
+            msg = err.error || msg;
+          } catch (_) {}
+          throw new Error(msg);
+        }
+        return res.json();
+      }
+
+      async function queueHandoff(action, targetBot, payload) {
+        const job = await api("/api/handoffs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, targetBot, payload, status: "pending" }),
+        });
+        showToast("Queued for App Builder → " + targetBot, ACTION_LABELS[action] + " · id " + job.id, "info");
+        await refreshHandoffs();
+        return job;
+      }
+
+      function setBridgeStatus(online) {
+        bridgeOnline = online;
+        const badge = document.getElementById("bridge-badge");
+        const text = document.getElementById("bridge-badge-text");
+        badge.classList.toggle("on", online);
+        badge.classList.toggle("off", !online);
+        text.textContent = online ? "Bridge live" : "Bridge offline";
+      }
+
+      async function refreshHandoffs() {
+        try {
+          const data = await api("/api/handoffs");
+          setBridgeStatus(true);
+          handoffState = data;
+          if (data.watchPath) {
+            document.getElementById("watch-path").textContent = data.watchPath;
+          }
+          renderLiveStrip();
+          renderHandoffInbox();
+          applyLiveRouteResultIfAny();
+        } catch (_) {
+          setBridgeStatus(false);
+          renderLiveStrip();
+          renderHandoffInbox();
+        }
+      }
+
+      function applyLiveRouteResultIfAny() {
+        // Soft auto-load only if no plan on screen yet
+        if (currentPlan && currentPlan.stops && currentPlan.stops.length) return;
+        const job = findLatestLiveRouteJob();
+        if (job) loadPlanFromHandoff(job, { silent: true });
+      }
+
+      function findLatestLiveRouteJob() {
+        const done = handoffState.done || [];
+        return (
+          done.find(function (j) {
+            return j.id === "f22fa86fcc8e" && j.action === "plan_route" && j.status === "completed" && j.result && (j.result.stops || j.result.orderedStops);
+          }) ||
+          done.find(function (j) {
+            return j.action === "plan_route" && j.status === "completed" && j.result && (j.result.stops || j.result.orderedStops);
+          }) ||
+          null
+        );
+      }
+
+
+      function renderLiveStrip() {
+        document.getElementById("pending-count").textContent = String(handoffState.pendingCount || 0);
+        const done = handoffState.done || [];
+        if (done.length) {
+          const last = done[0];
+          const snip = (last.summary || last.status || "done").slice(0, 80);
+          document.getElementById("last-result-snippet").textContent =
+            "Last: " + (ACTION_LABELS[last.action] || last.action || "?") + " — " + snip;
+        } else {
+          document.getElementById("last-result-snippet").textContent = bridgeOnline
+            ? "No completed results yet"
+            : "Start python3 app/server.py to enable live handoffs";
+        }
+      }
+
+      function renderHandoffInbox() {
+        const list = document.getElementById("handoff-list");
+        const pending = handoffState.pending || [];
+        const done = (handoffState.done || []).slice(0, 8);
+        const items = [
+          ...pending.map((j) => ({ ...j, _loc: "pending" })),
+          ...done.map((j) => ({ ...j, _loc: "done" })),
+        ];
+        document.getElementById("handoff-count").textContent =
+          "(" + pending.length + " pending · " + done.length + " recent)";
+
+        if (!items.length) {
+          list.innerHTML = '<li class="hf-empty">' +
+            (bridgeOnline
+              ? "No handoffs yet. Use Plan a route, Get a price, or pipeline actions."
+              : "Bridge offline — open via http://127.0.0.1:8765 after starting app/server.py") +
+            "</li>";
+          return;
+        }
+
+        list.innerHTML = items
+          .map((j) => {
+            const pill =
+              j.status === "pending"
+                ? "hf-pending"
+                : j.status === "failed"
+                ? "hf-failed"
+                : "hf-completed";
+            const summary = j.summary
+              ? esc(j.summary)
+              : j.status === "pending"
+              ? "Waiting for App Builder → " + esc(j.targetBot || "")
+              : esc(j.status || "");
+            return (
+              "<li>" +
+              '<div class="hf-top">' +
+              '<span class="hf-action">' +
+              esc(ACTION_LABELS[j.action] || j.action || "?") +
+              "</span>" +
+              '<span class="hf-pill ' +
+              pill +
+              '">' +
+              esc(j.status || "") +
+              "</span>" +
+              "</div>" +
+              '<div class="hf-bot">' +
+              esc(j.targetBot || "") +
+              " · " +
+              esc(j.id || "") +
+              "</div>" +
+              '<div class="hf-summary">' +
+              summary +
+              "</div>" +
+              "</li>"
+            );
+          })
+          .join("");
+      }
+
+      /* ——— Navigation ——— */
+      function showView(name) {
+        document.querySelectorAll(".view").forEach((el) => {
+          const on = el.id === "view-" + name;
+          el.classList.toggle("active", on);
+          if (on) el.removeAttribute("hidden");
+          else el.setAttribute("hidden", "");
+        });
+        document.querySelectorAll(".nav-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.getAttribute("data-view") === name);
+        });
+        if (name === "home") {
+          renderHome();
+          refreshHandoffs();
+        }
+        if (name === "receipts" && window.rcLoad) window.rcLoad();
+        if (name === "route") {
+          setTimeout(function () {
+            ensureRouteMap();
+            if (!currentPlan) {
+              const saved = loadPlanFromStorage();
+              if (saved) {
+                saved.stops = (saved.stops || []).map(function (s, i) { return normalizeStop(s, i); });
+                currentPlan = saved;
+                renderStopsTable();
+                plotCurrentPlanOnMap();
+                updateMapsLink();
+              }
+            } else {
+              currentPlan.stops = (currentPlan.stops || []).map(function (s, i) { return normalizeStop(s, i); });
+              plotCurrentPlanOnMap();
+              updateMapsLink();
+            }
+            // Prefer latest live completed plan when available
+            refreshHandoffs().then(function () {
+              const job = findLatestLiveRouteJob();
+              if (job && (!currentPlan || currentPlan.source === "demo" || currentPlan.id === job.id)) {
+                // Auto-load live if nothing better, or refresh same id
+                if (!currentPlan || currentPlan.source === "demo" || currentPlan.id === job.id) {
+                  loadPlanFromHandoff(job, { silent: true });
+                }
+              }
+            });
+          }, 40);
+          setTimeout(function () {
+            if (routeMap) routeMap.invalidateSize({ animate: false });
+          }, 220);
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      document.querySelectorAll("[data-view]").forEach((el) => {
+        el.addEventListener("click", () => showView(el.getAttribute("data-view")));
+      });
+      document.querySelectorAll("[data-goto]").forEach((el) => {
+        el.addEventListener("click", () => showView(el.getAttribute("data-goto")));
+      });
+
+      /* ——— Home ——— */
+      function renderToday() {
+        const stats = [
+          { label: "In intake", value: countByStage("intake"), hint: "Photos / groups", color: "#5b9fff" },
+          { label: "Ready to list", value: countByStage("list"), hint: "eBay path", color: "#8bb8ff" },
+          { label: "Sold (pipeline)", value: countByStage("sold"), hint: "In inventory", color: "#3dd68c" },
+          { label: "Sold this week", value: SOLD_THIS_WEEK, hint: "Demo total", color: "#3dd68c" },
+        ];
+        document.getElementById("today-strip").innerHTML = stats
+          .map(
+            (s) =>
+              '<div class="stat" style="--stat-color:' +
+              s.color +
+              '"><div class="label">' +
+              s.label +
+              '</div><div class="value">' +
+              s.value +
+              '</div><div class="hint">' +
+              s.hint +
+              "</div></div>"
+          )
+          .join("");
+      }
+
+      function stageStatus(stageId) {
+        const n = countByStage(stageId);
+        if (stageId === "sold") return n > 0 ? "done" : "idle";
+        return n > 0 ? "ready" : "idle";
+      }
+
+      function statusLabel(s) {
+        return { idle: "Idle", ready: "Ready", done: "Done" }[s] || s;
+      }
+
+      function stageMetric(stageId) {
+        const n = countByStage(stageId);
+        if (stageId === "intake") return "<strong>" + n + "</strong> shirts in intake";
+        if (stageId === "list") return "<strong>" + n + "</strong> ready to list";
+        return "<strong>" + n + "</strong> sold · <strong>" + SOLD_THIS_WEEK + "</strong> this week";
+      }
+
+      function renderPipeline() {
+        const el = document.getElementById("pipeline");
+        el.innerHTML = STAGES.map((st, i) => {
+          const status = stageStatus(st.id);
+          const readyCls = status === "ready" ? " ready" : "";
+          const botHtml = st.bot
+            ? '<span class="stage-bot"><span class="bot-dot" style="background:' +
+              st.botColor +
+              '"></span>' +
+              st.bot +
+              "</span>"
+            : '<span class="stage-bot"><span class="bot-dot" style="background:' +
+              st.botColor +
+              '"></span>Tracking</span>';
+          return (
+            '<div class="stage' +
+            readyCls +
+            '" role="listitem">' +
+            '<div class="stage-num">0' +
+            (i + 1) +
+            "</div>" +
+            '<div class="stage-name">' +
+            st.name +
+            "</div>" +
+            botHtml +
+            '<span class="stage-status status-' +
+            status +
+            '">' +
+            statusLabel(status) +
+            "</span>" +
+            '<div class="stage-metric">' +
+            stageMetric(st.id) +
+            "</div>" +
+            '<button type="button" class="btn btn-primary stage-action" data-stage="' +
+            st.id +
+            '">' +
+            st.action +
+            "</button></div>"
+          );
+        }).join("");
+
+        el.querySelectorAll(".stage-action").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const st = STAGES.find((s) => s.id === btn.getAttribute("data-stage"));
+            if (st) openConfirm(st);
+          });
+        });
+      }
+
+      function pillClass(stage) { return "stage-pill pill-" + stage; }
+      function stageName(stage) {
+        const st = STAGES.find((s) => s.id === stage);
+        return st ? st.name : stage;
+      }
+
+      function renderInventory() {
+        const body = document.getElementById("inv-body");
+        const everyday = inventory.filter((s) => STAGE_ORDER.includes(s.stage));
+        document.getElementById("inv-count").textContent = "(" + everyday.length + " shirts)";
+        if (!everyday.length) {
+          body.innerHTML = '<tr class="empty-row"><td colspan="6">No shirts in the everyday pipeline.</td></tr>';
+          return;
+        }
+        const sorted = [...everyday].sort(
+          (a, b) => STAGE_ORDER.indexOf(a.stage) - STAGE_ORDER.indexOf(b.stage) || a.brand.localeCompare(b.brand)
+        );
+        body.innerHTML = sorted
+          .map((item) => {
+            const priceHtml =
+              item.price != null
+                ? '<span class="price">$' + item.price + "</span>"
+                : '<span class="price pending">—</span>';
+            const canAdvance = item.stage !== "sold";
+            return (
+              '<tr data-id="' +
+              item.id +
+              '"><td><div class="shirt-brand">' +
+              esc(item.brand) +
+              '</div><div class="shirt-meta">' +
+              esc(item.style) +
+              "</div></td><td>" +
+              esc(item.size) +
+              "</td><td>" +
+              esc(item.color) +
+              "</td><td>" +
+              priceHtml +
+              '</td><td><span class="' +
+              pillClass(item.stage) +
+              '">' +
+              esc(stageName(item.stage)) +
+              "</span></td><td>" +
+              (canAdvance
+                ? '<button type="button" class="btn btn-ghost btn-sm btn-advance" data-id="' +
+                  item.id +
+                  '">Advance</button>'
+                : '<span style="font-size:0.72rem;color:var(--text-dim)">Complete</span>') +
+              "</td></tr>"
+            );
+          })
+          .join("");
+        body.querySelectorAll(".btn-advance").forEach((btn) => {
+          btn.addEventListener("click", () => advanceShirt(btn.getAttribute("data-id")));
+        });
+      }
+
+      function advanceShirt(id) {
+        const item = inventory.find((s) => s.id === id);
+        if (!item || item.stage === "sold") return;
+        const from = stageName(item.stage);
+        const idx = STAGE_ORDER.indexOf(item.stage);
+        item.stage = STAGE_ORDER[idx + 1];
+        if (item.stage === "list" && item.price == null) {
+          item.price = 18 + Math.floor(Math.random() * 28);
+        }
+        saveInventory();
+        renderHome();
+        showToast("Shirt advanced", item.brand + " " + item.style + ": " + from + " → " + stageName(item.stage), "info");
+      }
+
+      function renderHome() {
+        renderToday();
+        renderPipeline();
+        renderInventory();
+        renderLiveStrip();
+        renderHandoffInbox();
+      }
+
+
+      /* ——— Route plan (map + table + skip) ——— */
+      function extractZip(text) {
+        const m = String(text || "").match(/\b(\d{5})(?:-\d{4})?\b/);
+        return m ? m[1] : "";
+      }
+
+      function savePlanToStorage() {
+        if (!currentPlan) return;
+        try {
+          localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(currentPlan));
+        } catch (_) {}
+      }
+
+      function loadPlanFromStorage() {
+        try {
+          const raw = localStorage.getItem(PLAN_STORAGE_KEY);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.stops)) return parsed;
+        } catch (_) {}
+        return null;
+      }
+
+      function activeStops() {
+        if (!currentPlan) return [];
+        return currentPlan.stops.filter(function (s) { return !s.skipped && !isPitPlaceholder(s); });
+      }
+
+      function buildGoogleMapsUrl(plan) {
+        if (!plan) return null;
+        const origin = plan.startLabel || document.getElementById("route-start").value.trim() || DEFAULT_START.label;
+        const endEl = document.getElementById("route-end");
+        const destination =
+          (plan.endLabel) ||
+          (endEl && endEl.value.trim()) ||
+          origin;
+        const active = plan.stops.filter(function (s) { return !s.skipped && !isPitPlaceholder(s); });
+        let url =
+          "https://www.google.com/maps/dir/?api=1&origin=" + encodeURIComponent(origin) +
+          "&destination=" + encodeURIComponent(destination) +
+          "&travelmode=driving";
+        if (active.length) {
+          url +=
+            "&waypoints=" +
+            active.map(function (s) { return encodeURIComponent(s.address || s.name); }).join("%7C");
+        }
+        return url;
+      }
+
+
+      function buildAppleMapsUrl(plan) {
+        if (!plan) return null;
+        const origin = plan.startLabel || document.getElementById("route-start").value.trim() || DEFAULT_START.label;
+        const endEl = document.getElementById("route-end");
+        const destination = plan.endLabel || (endEl && endEl.value.trim()) || origin;
+        const active = plan.stops.filter(function (s) { return !s.skipped && !isPitPlaceholder(s); });
+        let url = "https://maps.apple.com/directions?source=" + encodeURIComponent(origin) +
+          "&destination=" + encodeURIComponent(destination) + "&mode=driving";
+        active.forEach(function (s) { url += "&waypoint=" + encodeURIComponent(s.address || s.name); });
+        return url;
+      }
+
+      function updateMapsLink() {
+        const el = document.getElementById("route-maps-link");
+        if (!el) return;
+        if (!currentPlan) {
+          el.innerHTML = "";
+          return;
+        }
+        const active = activeStops();
+        const url = buildGoogleMapsUrl(currentPlan);
+        currentPlan.mapsUrl = url;
+        const apple = buildAppleMapsUrl(currentPlan);
+        currentPlan.appleMapsUrl = apple;
+        // Show whenever a plan has active thrift/pit stops with a buildable URL
+        // (demo or live) — not gated on OSRM success.
+        if (url && active.length) {
+          el.innerHTML =
+            '<div class="maps-open">' +
+              '<span>Open route in:</span>' +
+              '<a class="maps-apple" href="' + esc(apple) + '" target="_blank" rel="noopener">Apple Maps</a>' +
+              '<a class="maps-google" href="' + esc(url) + '" target="_blank" rel="noopener">Google Maps</a>' +
+            '</div>';
+        } else {
+          el.innerHTML = "";
+        }
+      }
+
+      function ensureRouteMap(opts) {
+        opts = opts || {};
+        if (typeof L === "undefined") {
+          document.getElementById("map-status").textContent = "Leaflet failed to load";
+          return;
+        }
+        const el = document.getElementById("route-map");
+        if (!el) return;
+        if (!mapInited) {
+          el.classList.add("dark-tiles");
+          routeMap = L.map(el, { zoomControl: true, attributionControl: true });
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 19,
+          }).addTo(routeMap);
+          routeLayer = L.layerGroup().addTo(routeMap);
+          mapInited = true;
+          routeMap.setView([DEFAULT_START.lat, DEFAULT_START.lng], 10);
+        }
+        function reflow() {
+          if (routeMap) routeMap.invalidateSize({ animate: false });
+        }
+        reflow();
+        setTimeout(reflow, 100);
+        setTimeout(reflow, 300);
+        if (opts.resetToStart) plotCurrentPlanOnMap();
+      }
+
+      function pitCategory(s) {
+        if (!s) return null;
+        const t = String(s.type || s.category || "").toLowerCase();
+        if (t === "gas" || t === "food") return t;
+        if (["sheetz","wawa","exxon","shell","bp","circlek","seveneleven","gas"].indexOf(t) >= 0) return "gas";
+        if (["chickfila","mcdonalds","wendys","tacobell","subway","chipotle","starbucks","food"].indexOf(t) >= 0) return "food";
+        if (s.category === "gas" || s.category === "food") return s.category;
+        return null;
+      }
+      function isPit(s) { return !!pitCategory(s); }
+      function isPitPlaceholder(s) { return !!s && s.kind === "pit-placeholder"; }
+      function pitEmoji(s) {
+        const cat = pitCategory(s);
+        if (cat === "gas") return "⛽";
+        if (cat === "food") return "🍔";
+        return "•";
+      }
+      function makePitIcon(s) {
+        const cat = pitCategory(s) || "gas";
+        return L.divIcon({
+          className: "pit-marker",
+          html: '<div class="pin pit ' + cat + '">' + pitEmoji(s) + "</div>",
+          iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -18],
+        });
+      }
+      function pitBadge(s) {
+        if (!isPit(s)) return "";
+        const cat = pitCategory(s);
+        const label = cat === "gas" ? "⛽ Pit · gas" : "🍔 Pit · food";
+        return '<span class="pit-badge ' + cat + '">' + label + "</span>";
+      }
+      function chainSlug(name) {
+        return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "").replace(/chickfila.*/, "chickfila");
+      }
+
+      function makePinIcon(label, kind) {
+        const big = kind === "start" || kind === "end" || kind === "startend";
+        const cls = big ? "pin " + kind : "pin stop";
+        const sz = big ? 32 : 28;
+        return L.divIcon({
+          className: big ? "start-marker" : "stop-marker",
+          html: '<div class="' + cls + '">' + esc(label) + "</div>",
+          iconSize: [sz, sz],
+          iconAnchor: [sz / 2, sz / 2],
+          popupAnchor: [0, -sz / 2],
+        });
+      }
+
+      function gatherRouteWaypoints() {
+        const pts = [{ lat: startCoords.lat, lng: startCoords.lng, kind: "start" }];
+        activeStops().forEach(function (s) {
+          if (s.lat == null || s.lng == null) return;
+          pts.push({ lat: s.lat, lng: s.lng, kind: isPit(s) ? "pit" : "stop", stop: s });
+        });
+        const endLat = endCoords && endCoords.lat != null ? endCoords.lat : startCoords.lat;
+        const endLng = endCoords && endCoords.lng != null ? endCoords.lng : startCoords.lng;
+        pts.push({ lat: endLat, lng: endLng, kind: "end" });
+        return pts;
+      }
+
+      async function fetchOsrmGeometry(waypoints) {
+        if (waypoints.length < 2) return null;
+        const coordStr = waypoints.map(function (p) { return p.lng + "," + p.lat; }).join(";");
+        const data = await api("/api/route?coords=" + encodeURIComponent(coordStr));
+        if (!data || !data.geometry) return null;
+        return data;
+      }
+
+      function plotCurrentPlanOnMap() {
+        ensureRouteMap();
+        if (!routeMap || !routeLayer) return;
+        routeLayer.clearLayers();
+        if (routeLineLayer) {
+          routeMap.removeLayer(routeLineLayer);
+          routeLineLayer = null;
+        }
+
+        const endLat = endCoords && endCoords.lat != null ? endCoords.lat : startCoords.lat;
+        const endLng = endCoords && endCoords.lng != null ? endCoords.lng : startCoords.lng;
+        // Same location if coords within ~50 m, or the "Same as start" box is checked
+        const sameBox = document.getElementById("route-end-same");
+        const endIsStart = (sameBox && sameBox.checked) ||
+          (Math.abs(endLat - startCoords.lat) < 0.0005 && Math.abs(endLng - startCoords.lng) < 0.0005);
+        const startLbl = esc((currentPlan && currentPlan.startLabel) || document.getElementById("route-start").value || "");
+        const endLbl = esc((currentPlan && currentPlan.endLabel) || document.getElementById("route-end").value || "");
+        if (endIsStart) {
+          L.marker([startCoords.lat, startCoords.lng], { icon: makePinIcon("SE", "startend"), zIndexOffset: 2000 })
+            .addTo(routeLayer)
+            .bindPopup("<strong>Start &amp; End</strong><br>" + startLbl);
+        } else {
+          L.marker([startCoords.lat, startCoords.lng], { icon: makePinIcon("S", "start"), zIndexOffset: 2000 })
+            .addTo(routeLayer)
+            .bindPopup("<strong>Start</strong><br>" + startLbl);
+          L.marker([endLat, endLng], { icon: makePinIcon("E", "end"), zIndexOffset: 2000 })
+            .addTo(routeLayer)
+            .bindPopup("<strong>End</strong><br>" + endLbl);
+        }
+
+        const active = activeStops();
+        let num = 0;
+        const markerPts = [[startCoords.lat, startCoords.lng]];
+        active.forEach(function (s) {
+          if (s.lat == null || s.lng == null) return;
+          markerPts.push([s.lat, s.lng]);
+          if (isPit(s)) {
+            L.marker([s.lat, s.lng], { icon: makePitIcon(s), zIndexOffset: 1000 })
+              .addTo(routeLayer)
+              .bindPopup("<strong>" + esc(s.name) + "</strong><br>" + esc(s.address || s.notes || ""));
+            return;
+          }
+          num += 1;
+          L.marker([s.lat, s.lng], { icon: makePinIcon(String(num), "stop") })
+            .addTo(routeLayer)
+            .bindPopup("<strong>" + esc(s.name) + "</strong><br>" + esc(s.address || s.notes || ""));
+        });
+
+        markerPts.push([endLat, endLng]);
+
+        // Temporary straight line until OSRM returns (keeps map responsive)
+        let fallbackLine = L.polyline(markerPts, { color: "#3dd68c", weight: 2, opacity: 0.25, dashArray: "4 6" });
+        fallbackLine.addTo(routeLayer);
+
+        if (markerPts.length > 1) {
+          routeMap.fitBounds(L.latLngBounds(markerPts), { padding: [40, 40] });
+        } else {
+          routeMap.setView([startCoords.lat, startCoords.lng], 10);
+        }
+        routeMap.invalidateSize({ animate: false });
+
+        const skipped = currentPlan ? currentPlan.stops.filter(function (s) { return s.skipped; }).length : 0;
+        const missingCoords = currentPlan
+          ? currentPlan.stops.filter(function (s) { return !s.skipped && (s.lat == null || s.lng == null); }).length
+          : 0;
+        const pitN = active.filter(isPit).length;
+        document.getElementById("map-status").textContent = currentPlan
+          ? (num + " thrift" +
+              (pitN ? " · " + pitN + " pit" : "") +
+              (missingCoords ? " · " + missingCoords + " missing coords" : "") +
+              (skipped ? " · " + skipped + " skipped" : "") +
+              " · routing…")
+          : "Start · waiting for plan";
+
+        // OSRM road geometry
+        const token = ++osrmAbort;
+        const wps = gatherRouteWaypoints();
+        if (wps.length >= 2) {
+          fetchOsrmGeometry(wps).then(function (data) {
+            if (token !== osrmAbort) return;
+            if (!routeMap || !data || !data.geometry) {
+              document.getElementById("map-status").textContent = currentPlan
+                ? (num + " stops · straight-line fallback")
+                : "Start · waiting for plan";
+              return;
+            }
+            if (fallbackLine) {
+              try { routeLayer.removeLayer(fallbackLine); } catch (_) {}
+              fallbackLine = null;
+            }
+            if (routeLineLayer) {
+              try { routeMap.removeLayer(routeLineLayer); } catch (_) {}
+            }
+            routeLineLayer = L.geoJSON(data.geometry, {
+              style: { color: "#3dd68c", weight: 4, opacity: 0.92 },
+            }).addTo(routeMap);
+            lastOsrmStats = {
+              distanceMeters: data.distanceMeters,
+              durationSeconds: data.durationSeconds,
+            };
+            if (currentPlan && lastOsrmStats.distanceMeters != null) {
+              const mi = (lastOsrmStats.distanceMeters / 1609.34).toFixed(1);
+              const mins = Math.round(lastOsrmStats.durationSeconds / 60);
+              currentPlan.osrmMiles = Number(mi);
+              currentPlan.osrmDriveMin = mins;
+              // Refresh summary line with road miles
+              renderStopsTableSummaryOnly();
+              updateTimeEstimate();
+            }
+            try {
+              routeMap.fitBounds(routeLineLayer.getBounds(), { padding: [40, 40] });
+            } catch (_) {}
+            document.getElementById("map-status").textContent = currentPlan
+              ? (num + " thrift" +
+                  (pitN ? " · " + pitN + " pit" : "") +
+                  (skipped ? " · " + skipped + " skipped" : "") +
+                  " · " + (lastOsrmStats.distanceMeters / 1609.34).toFixed(1) + " mi road")
+              : "Start · waiting for plan";
+          }).catch(function () {
+            if (token !== osrmAbort) return;
+            document.getElementById("map-status").textContent = currentPlan
+              ? (num + " stops · OSRM unavailable · straight line")
+              : "Start · waiting for plan";
+          });
+        }
+      }
+
+      function renderStopsTableSummaryOnly() {
+        if (!currentPlan) return;
+        const activeN = activeStops().length;
+        const skipN = currentPlan.stops.length - activeN;
+        const road =
+          currentPlan.osrmMiles != null
+            ? (" · ~" + currentPlan.osrmMiles + " mi road / ~" + currentPlan.osrmDriveMin + "m drive")
+            : "";
+        document.getElementById("route-summary").textContent =
+          (currentPlan.summary || "") +
+          (currentPlan.summary ? " · " : "") +
+          activeN + " active" + (skipN ? " · " + skipN + " skipped" : "") +
+          road;
+      }
+
+      /* ——— Receipt Tracker → Route Planning ——— */
+      var RECEIPT_LOCS = [];
+      var RECENT_DAYS = 14;
+      try { RECEIPT_LOCS = (JSON.parse(localStorage.getItem("polo-pipeline-receipt-stats-v1")) || {}).locations || []; } catch (e) {}
+      window.setReceiptLocs = function (locs) { RECEIPT_LOCS = locs || []; if (typeof renderStopsTable === "function") renderStopsTable(); };
+      fetch("/api/receipts").then(function (r) { return r.json(); }).then(function (d) { if (d && d.stats) window.setReceiptLocs(d.stats); })
+        .catch(function () { fetch("data/receipt-stats.json").then(function (r) { return r.json(); }).then(function (d) { window.setReceiptLocs(d.locations); }).catch(function () {}); });
+      var RC_STOP = { the: 1, store: 1, thrift: 1, shop: 1, inc: 1, of: 1, and: 1, oh: 1, va: 1, nc: 1, md: 1, pa: 1, ny: 1, fl: 1, ga: 1, tx: 1, ca: 1, blvd: 1, hwy: 1, rd: 1, st: 1, ave: 1, pl: 1, dr: 1 };
+      var RC_CHAINS = ["goodwill", "salvation army", "hospice", "savers", "value village", "habitat", "america s thrift", "st vincent"];
+      function rcNorm(t) { return String(t || "").toLowerCase().replace(/&/g, " ").replace(/[^a-z0-9]+/g, " ").replace(/\band\b/g, " ").replace(/\s+/g, " ").trim(); }
+      function rcChain(n) { for (var i = 0; i < RC_CHAINS.length; i++) if ((" " + n + " ").indexOf(" " + RC_CHAINS[i] + " ") >= 0) return RC_CHAINS[i]; return ""; }
+      function rcTokens(n, chain) { return n.replace(chain, " ").split(" ").filter(function (w) { return w.length > 2 && !RC_STOP[w] && !/^\d+$/.test(w); }); }
+      function rcStreet(a) { var m = rcNorm(a).match(/^(\d+)\s+([a-z]+)/); return m ? m[1] + " " + m[2] : ""; }
+      function matchReceipt(stop, opts) {
+        if (!stop || !RECEIPT_LOCS.length || isPit(stop) || isPitPlaceholder(stop)) return null;
+        var sn = rcNorm(stop.name), sa = rcNorm(stop.address), sc = rcChain(sn), sst = rcStreet(stop.address);
+        var best = null, bestScore = 0, bestWeak = false;
+        RECEIPT_LOCS.forEach(function (L) {
+          var ln = rcNorm(L.store), lc = rcChain(ln), score = 0;
+          if (sst && sst === rcStreet(L.address)) score += 10; // same street number + name = same store
+          if (sc && lc && sc !== lc) return;               // different chains never match
+          if (sc && sc === lc) score += 3;
+          // Name-vs-name match; if the stop has no address, also let the receipt's town count.
+          var hay = " " + sn + " ";
+          var lt = ln + (sa ? "" : " " + rcNorm(L.address).replace(/\d+/g, " "));
+          var toks = rcTokens(lt, lc), hit = toks.filter(function (w) { return hay.indexOf(" " + w + " ") >= 0; }).length;
+          score += hit * 2;
+          if (!sc && !lc && hit >= 2) score += 2;
+          var sameSt = sst && sst === rcStreet(L.address);
+          var weak = false;
+          if (sc && sc === lc && !hit && !sameSt) {
+            // chain only: accept the receipt's town matching the stop's address town, flagged weak
+            var lTown = rcTokens(rcNorm(L.address).replace(/\d+/g, " "), "").concat(rcTokens(ln, lc));
+            if (!sa || !lTown.some(function (w) { return (" " + sa + " ").indexOf(" " + w + " ") >= 0; })) return;
+            score += 0.5; weak = true;
+          }
+          if (score > bestScore) { bestScore = score; best = L; bestWeak = weak; }
+        });
+        if (bestScore < (bestWeak ? 3.5 : 4)) return null;
+        if (bestWeak && !opts) {
+          // town-only match: only trust it if no other stop in the plan claims the same receipt location the same way
+          var n = (currentPlan ? currentPlan.stops : []).filter(function (o) { var r = matchReceipt(o, { raw: 1 }); return r && r.L === best && r.weak; }).length;
+          if (n > 1) return null;
+        }
+        return opts ? { L: best, weak: bestWeak } : best;
+      }
+      function rcDays(L) {
+        if (L.lastVisit) { var d = Math.floor((Date.now() - new Date(L.lastVisit + "T12:00:00").getTime()) / 864e5); if (!isNaN(d)) return Math.max(0, d); }
+        return L.daysSince;
+      }
+      function rcStarsHtml(L) {
+        var r = Number(L.rating) || 0;
+        if (!r) return '<div class="rc-stars-row" style="opacity:.5;font-size:.85em">unrated</div>';
+        var low = r <= 2;
+        return '<div class="rc-stars-row" title="' + esc((L.notes || "").slice(0, 300)) + '">' +
+          '<span class="rc-stars-glyphs"><span style="color:#f5c518">' + "★".repeat(r) + '</span><span style="color:#555">' + "★".repeat(5 - r) + "</span></span>" +
+          (low ? ' <span class="rc-low-skip">low ★ skip?</span>' : "") +
+          (L.notes ? ' <span style="opacity:.6;flex-shrink:0">📝</span>' : "") + "</div>";
+      }
+      function receiptCell(s) {
+        var L = matchReceipt(s);
+        if (!L) return '<td class="stop-receipts" style="opacity:.55">no receipts</td>';
+        var d = rcDays(L), recent = d != null && d <= RECENT_DAYS;
+        var col = d == null ? "inherit" : recent ? "#f5a623" : d <= 45 ? "#9ad" : "#5c5";
+        return '<td class="stop-receipts" title="Matched receipt location: ' + esc(L.store) + '">' +
+          '<div style="font-weight:600;color:' + col + '">' + (d == null ? "—" : d + "d ago") + (recent ? " · <span style=\"background:#f5a623;color:#111;border-radius:4px;padding:0 .3rem\">skip?</span>" : "") + "</div>" +
+          rcStarsHtml(L) +
+          "<div>$" + (Number(L.totalSpent) || 0).toFixed(2) + " / " + L.visits + " visit" + (L.visits == 1 ? "" : "s") + "</div>" +
+          '<div style="opacity:.6;font-size:.85em">' + esc(L.store) + "</div></td>";
+      }
+      function recentStopIdx() {
+        if (!currentPlan) return [];
+        var out = [];
+        currentPlan.stops.forEach(function (s, i) { var L = matchReceipt(s); if (L) { var d = rcDays(L); if (d != null && d <= RECENT_DAYS) out.push(i); } });
+        return out;
+      }
+      function renderReceiptBanner() {
+        var el = document.getElementById("route-receipt-banner"); if (!el) return;
+        if (!currentPlan || !currentPlan.stops.length || !RECEIPT_LOCS.length) { el.style.display = "none"; return; }
+        var matched = currentPlan.stops.filter(function (s) { return matchReceipt(s); }).length;
+        var rec = recentStopIdx(), pending = rec.filter(function (i) { return !currentPlan.stops[i].skipped; });
+        el.style.display = "";
+        el.innerHTML = "🧾 <strong>Receipt Tracker:</strong> " + matched + " of your stops have receipt history. " +
+          (rec.length ? rec.length + " visited in the last " + RECENT_DAYS + " days (" + rec.map(function (i) { return esc(currentPlan.stops[i].name); }).join(", ") + ")" +
+            (pending.length ? " — consider skipping (use <em>Skip recent</em>)." : " — already skipped.") : "Nothing visited in the last " + RECENT_DAYS + " days.") +
+          (function () { var lw = currentPlan.stops.filter(function (s) { var L = matchReceipt(s); return L && Number(L.rating) && L.rating <= 2; });
+            return lw.length ? " ⭐ Low-rated (≤2★): " + lw.map(function (s) { return esc(s.name); }).join(", ") + "." : ""; })();
+      }
+
+      function renderStopsTable() {
+        renderReceiptBanner();
+        const tbody = document.getElementById("stops-tbody");
+        if (!currentPlan || !currentPlan.stops.length) {
+          tbody.innerHTML = '<tr><td colspan="10" class="stops-empty">Stops will appear here after you plan or load a route.</td></tr>';
+          document.getElementById("route-result-title").textContent = "No plan loaded yet";
+          document.getElementById("route-summary").textContent =
+            "Plan a route or load the latest live Thrift Router result.";
+          return;
+        }
+        document.getElementById("route-result-title").textContent = currentPlan.title || currentPlan.source || "Route";
+        renderStopsTableSummaryOnly();
+
+        let displayNum = 0;
+        tbody.innerHTML = currentPlan.stops
+          .map(function (s, idx) {
+            if (isPitPlaceholder(s)) {
+              return (
+                '<tr class="pit-placeholder-row" data-idx="' + idx + '" draggable="true">' +
+                '<td><span class="drag-handle" title="Drag to where the pit stop should go" aria-label="Drag">⠿</span></td>' +
+                '<td class="stop-num">⛽?</td>' +
+                '<td colspan="6"><div class="stop-name">Pit stop slot <span class="pit-badge gas">placeholder</span></div>' +
+                '<div class="stop-notes">Drag this row between the two stops where you want to stop, then choose from what\'s on that leg.</div></td>' +
+                '<td></td>' +
+                '<td><button type="button" class="btn btn-secondary btn-pit-choose" data-idx="' + idx + '">Options here</button> ' +
+                '<button type="button" class="btn btn-ghost btn-pit-remove" data-idx="' + idx + '" title="Remove slot">✕</button></td>' +
+                "</tr>"
+              );
+            }
+            if (!s.skipped && !isPit(s)) displayNum += 1;
+            const nLabel = s.skipped ? "—" : isPit(s) ? pitEmoji(s) : String(displayNum);
+            const link = s.url
+              ? '<a class="stop-link" href="' + esc(s.url) + '" target="_blank" rel="noopener">Site</a>'
+              : "";
+            const insertBtn =
+              '<button type="button" class="btn btn-ghost btn-insert-pit" data-insert-after="' + idx + '" title="Insert pit stop after this row">+ Pit</button>';
+            return (
+              '<tr class="' + (s.skipped ? "skipped" : "") + '" data-idx="' + idx + '" draggable="true">' +
+              '<td><span class="drag-handle" title="Drag to reorder" aria-label="Drag">⠿</span></td>' +
+              '<td class="stop-num">' + nLabel + "</td>" +
+              '<td><div class="stop-name">' + esc(s.name) + pitBadge(s) + '</div><div class="stop-addr">' + esc(s.address || "—") + "</div></td>" +
+              '<td class="stop-hours">' + esc(s.hours || "—") + "</td>" +
+              '<td class="stop-hours">' + esc(s.arrive || "—") + "</td>" +
+              '<td class="stop-hours">' + esc(s.leave || "—") + "</td>" +
+              '<td class="stop-notes">' + esc(s.notes || "") + "</td>" +
+              receiptCell(s) +
+              '<td class="skip-cell"><input type="checkbox" class="skip-toggle" data-idx="' + idx + '" ' +
+              (s.skipped ? "checked" : "") + ' title="Skip this stop" aria-label="Skip ' + esc(s.name) + '" /></td>' +
+              "<td>" + insertBtn + " " + link + "</td>" +
+              "</tr>"
+            );
+          })
+          .join("");
+
+        tbody.querySelectorAll(".skip-toggle").forEach(function (cb) {
+          cb.addEventListener("change", function () {
+            const i = Number(cb.getAttribute("data-idx"));
+            if (!currentPlan || !currentPlan.stops[i]) return;
+            currentPlan.stops[i].skipped = !!cb.checked;
+            savePlanToStorage();
+            renderStopsTable();
+            plotCurrentPlanOnMap();
+            updateMapsLink();
+            updateTimeEstimate();
+          });
+        });
+
+        tbody.querySelectorAll(".btn-insert-pit").forEach(function (btn) {
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const after = Number(btn.getAttribute("data-insert-after"));
+            insertPitPlaceholder(after);
+          });
+        });
+        tbody.querySelectorAll(".btn-pit-choose").forEach(function (btn) {
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            openPitModal(Number(btn.getAttribute("data-idx")));
+          });
+        });
+        tbody.querySelectorAll(".btn-pit-remove").forEach(function (btn) {
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const i = Number(btn.getAttribute("data-idx"));
+            if (currentPlan && isPitPlaceholder(currentPlan.stops[i])) currentPlan.stops.splice(i, 1);
+            savePlanToStorage();
+            renderStopsTable();
+          });
+        });
+
+        bindStopsDragDrop(tbody);
+      }
+
+      function bindStopsDragDrop(tbody) {
+        let dragIdx = null;
+        tbody.querySelectorAll("tr[draggable]").forEach(function (row) {
+          row.addEventListener("dragstart", function (e) {
+            dragIdx = Number(row.getAttribute("data-idx"));
+            row.classList.add("dragging");
+            try { e.dataTransfer.setData("text/plain", String(dragIdx)); } catch (_) {}
+            e.dataTransfer.effectAllowed = "move";
+          });
+          row.addEventListener("dragend", function () {
+            row.classList.remove("dragging");
+            tbody.querySelectorAll("tr.drag-over").forEach(function (r) { r.classList.remove("drag-over"); });
+            dragIdx = null;
+          });
+          row.addEventListener("dragover", function (e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            row.classList.add("drag-over");
+          });
+          row.addEventListener("dragleave", function () {
+            row.classList.remove("drag-over");
+          });
+          row.addEventListener("drop", function (e) {
+            e.preventDefault();
+            row.classList.remove("drag-over");
+            const toIdx = Number(row.getAttribute("data-idx"));
+            let fromIdx = dragIdx;
+            try {
+              const raw = e.dataTransfer.getData("text/plain");
+              if (raw !== "") fromIdx = Number(raw);
+            } catch (_) {}
+            if (!currentPlan || fromIdx == null || Number.isNaN(fromIdx) || Number.isNaN(toIdx)) return;
+            if (fromIdx === toIdx) return;
+            const arr = currentPlan.stops;
+            const item = arr.splice(fromIdx, 1)[0];
+            arr.splice(toIdx, 0, item);
+            if (isPitPlaceholder(item)) {
+              // Order first, options second: placeholder has no coords, route is unchanged.
+              savePlanToStorage();
+              renderStopsTable();
+              openPitModal(toIdx);
+              return;
+            }
+            currentPlan.osrmMiles = null;
+            currentPlan.osrmDriveMin = null;
+            savePlanToStorage();
+            renderStopsTable();
+            plotCurrentPlanOnMap();
+            updateMapsLink();
+            updateTimeEstimate();
+          });
+        });
+      }
+
+      function legEndpointsForInsert(afterIdx) {
+        // afterIdx: insert AFTER this stop index; -1 means before first stop (start → first)
+        const stops = currentPlan ? currentPlan.stops : [];
+        function coordsOf(i) {
+          if (i < 0) return { lat: startCoords.lat, lng: startCoords.lng, label: "Start" };
+          if (i >= stops.length) {
+            return {
+              lat: endCoords.lat != null ? endCoords.lat : startCoords.lat,
+              lng: endCoords.lng != null ? endCoords.lng : startCoords.lng,
+              label: "End",
+            };
+          }
+          const s = stops[i];
+          if (s && !s.skipped && !isPitPlaceholder(s) && s.lat != null && s.lng != null) return { lat: s.lat, lng: s.lng, label: s.name };
+          return null;
+        }
+        // Walk backward/forward to nearest stop with coords (skipping skipped for corridor? use all with coords)
+        let from = null;
+        for (let i = afterIdx; i >= -1; i--) {
+          from = coordsOf(i);
+          if (from && from.lat != null) break;
+        }
+        if (!from) from = { lat: startCoords.lat, lng: startCoords.lng, label: "Start" };
+        let to = null;
+        for (let i = afterIdx + 1; i <= stops.length; i++) {
+          to = coordsOf(i);
+          if (to && to.lat != null) break;
+        }
+        if (!to) {
+          to = {
+            lat: endCoords.lat != null ? endCoords.lat : startCoords.lat,
+            lng: endCoords.lng != null ? endCoords.lng : startCoords.lng,
+            label: "End",
+          };
+        }
+        return { from: from, to: to };
+      }
+
+      async function openPitModal(afterIdx) {
+        if (!currentPlan || !currentPlan.stops.length) {
+          showToast("Load a route first", "Plan or demo a route, then insert a pit stop.", "warn");
+          return;
+        }
+        // afterIdx is now the placeholder's index; leg = nearest usable stop above → below it.
+        const phIdx = afterIdx;
+        pitInsertAfterIdx = phIdx;
+        afterIdx = phIdx - 1;
+        const backdrop = document.getElementById("pit-modal-backdrop");
+        const list = document.getElementById("pit-candidate-list");
+        list.innerHTML = '<div class="stops-empty">Finding low-detour national chains…</div>';
+        backdrop.classList.add("open");
+        const leg = legEndpointsForInsert(afterIdx);
+        document.getElementById("pit-modal-note").textContent =
+          "Between " + (leg.from.label || "A") + " → " + (leg.to.label || "B") +
+          ". National-chain gas & fast food only · ranked by approx. detour from that corridor.";
+        try {
+          const url =
+            "/api/pitstops/candidates?fromLat=" + encodeURIComponent(leg.from.lat) +
+            "&fromLng=" + encodeURIComponent(leg.from.lng) +
+            "&toLat=" + encodeURIComponent(leg.to.lat) +
+            "&toLng=" + encodeURIComponent(leg.to.lng) +
+            "&limit=14";
+          const data = await api(url);
+          pitCandidatesCache = (data && data.candidates) || [];
+          pitEmptyReason = (data && data.reason) || "";
+          renderPitCandidates();
+        } catch (e) {
+          list.innerHTML = '<div class="stops-empty">Could not load candidates (' + esc(e.message) + ").</div>";
+        }
+      }
+
+      function closePitModal() {
+        document.getElementById("pit-modal-backdrop").classList.remove("open");
+      }
+
+      function renderPitCandidates() {
+        const list = document.getElementById("pit-candidate-list");
+        let rows = pitCandidatesCache.slice();
+        if (pitFilter === "gas" || pitFilter === "food") {
+          rows = rows.filter(function (c) { return c.category === pitFilter; });
+        }
+        if (!rows.length) {
+          const msg = pitEmptyReason === "leg_too_short"
+            ? "These two stops are too close together for a pit stop — nothing to show."
+            : pitCandidatesCache.length ? "No candidates for this filter on this leg."
+            : "No national-chain gas or food along this leg. Try another spot, or remove the slot.";
+          list.innerHTML = '<div class="stops-empty">' + msg + '</div>';
+          return;
+        }
+        list.innerHTML = rows.map(function (c) {
+          const emoji = c.category === "gas" ? "⛽" : "🍔";
+          return (
+            '<button type="button" class="pit-candidate" data-pit-id="' + esc(c.id) + '">' +
+            '<div class="pc-name">' + emoji + " " + esc(c.name) + "</div>" +
+            '<div class="pc-meta">' + esc(c.address || "") + (c.hours ? " · " + esc(c.hours) : "") + "</div>" +
+            '<div class="pc-detour">~' + (c.detourMiles != null ? c.detourMiles : "?") + " mi off corridor" +
+            (c.notes ? " · " + esc(c.notes) : "") + "</div>" +
+            "</button>"
+          );
+        }).join("");
+        list.querySelectorAll(".pit-candidate").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            const id = btn.getAttribute("data-pit-id");
+            const c = pitCandidatesCache.find(function (x) { return x.id === id; });
+            if (c) insertPitStop(c);
+          });
+        });
+      }
+
+      function insertPitStop(c) {
+        if (!currentPlan) return;
+        const stop = normalizeStop({
+          id: "pit-" + c.id + "-" + Date.now().toString(36),
+          name: c.name,
+          address: c.address,
+          hours: c.hours || "",
+          notes: (c.notes || "Pit stop") + " · low-detour pick",
+          lat: c.lat,
+          lng: c.lng,
+          type: c.category, // gas | food
+          category: c.category,
+          chain: c.chain,
+        }, currentPlan.stops.length);
+        stop.type = c.category;
+        stop.category = c.category;
+        const at = pitInsertAfterIdx;
+        if (isPitPlaceholder(currentPlan.stops[at])) currentPlan.stops.splice(at, 1, stop);
+        else currentPlan.stops.splice(Math.max(0, Math.min(currentPlan.stops.length, at)), 0, stop);
+        currentPlan.osrmMiles = null;
+        currentPlan.osrmDriveMin = null;
+        savePlanToStorage();
+        closePitModal();
+        renderStopsTable();
+        plotCurrentPlanOnMap();
+        updateMapsLink();
+        updateTimeEstimate();
+        showToast("Pit stop added", c.name + " placed in your slot", "info");
+      }
+
+      function insertPitPlaceholder(afterIdx) {
+        if (!currentPlan) return;
+        const ph = { id: "pitph-" + Date.now().toString(36), kind: "pit-placeholder", name: "Pit stop", lat: null, lng: null, skipped: false, type: "pit-placeholder" };
+        const at = Math.max(0, Math.min(currentPlan.stops.length, afterIdx + 1));
+        currentPlan.stops.splice(at, 0, ph);
+        savePlanToStorage();
+        renderStopsTable();
+        showToast("Pit slot added", "Drag it between the stops you want, then pick from what's on that leg (or hit “Options here”).", "info");
+      }
+
+      function setCurrentPlan(plan) {
+        currentPlan = plan;
+        if (plan) {
+          plan.endLabel = plan.endLabel || document.getElementById("route-end").value.trim();
+        }
+        savePlanToStorage();
+        renderStopsTable();
+        plotCurrentPlanOnMap();
+        updateMapsLink();
+        updateTimeEstimate();
+      }
+
+      function normalizeStop(raw, idx) {
+        if (raw && raw.kind === "pit-placeholder") {
+          return { id: raw.id || ("pitph-" + idx), kind: "pit-placeholder", name: "Pit stop", address: "", hours: "",
+            notes: "", url: "", lat: null, lng: null, arrive: "", leave: "", skipped: false, type: "pit-placeholder", category: null, chain: null };
+        }
+        let lat = raw.lat != null ? Number(raw.lat) : raw.latitude != null ? Number(raw.latitude) : null;
+        let lng =
+          raw.lng != null ? Number(raw.lng) :
+          raw.lon != null ? Number(raw.lon) :
+          raw.longitude != null ? Number(raw.longitude) : null;
+        const name = raw.name || raw.title || "Stop " + (idx + 1);
+        const address = raw.address || "";
+        if (lat == null || lng == null || Number.isNaN(lat) || Number.isNaN(lng)) {
+          const known = lookupKnownCoords(name, address);
+          if (known) {
+            lat = known.lat;
+            lng = known.lng;
+          }
+        }
+        return {
+          id: raw.id || ("s" + (raw.n || idx + 1)),
+          name: name,
+          address: address,
+          hours: raw.hours || "",
+          notes: raw.notes || raw.note || raw.meta || "",
+          url: raw.url || raw.link || "",
+          lat: lat,
+          lng: lng,
+          arrive: raw.arrive || raw.etaArrive || raw.arrival || "",
+          leave: raw.leave || raw.etaLeave || raw.departure || "",
+          skipped: !!raw.skipped,
+          type: (function () {
+            const cat = raw.category || raw.type || raw.kind || "thrift";
+            const t = String(cat).toLowerCase().replace(/[^a-z]/g, "");
+            if (t === "gas" || t === "food") return t;
+            if (["sheetz","wawa","exxon","shell","bp","circlek","seveneleven"].indexOf(t) >= 0) return "gas";
+            if (["chickfila","mcdonalds","wendys","tacobell","subway","chipotle","starbucks"].indexOf(t) >= 0) return "food";
+            return "thrift";
+          })(),
+          category: raw.category || null,
+          chain: raw.chain || null,
+        };
+      }
+
+      async function geocodeMissingStops(plan) {
+        // Re-apply static lookup first (covers known live set without network)
+        plan.stops.forEach(function (s) {
+          if (s.lat != null && s.lng != null) return;
+          if (isPitPlaceholder(s)) return;
+          const known = lookupKnownCoords(s.name, s.address);
+          if (known) {
+            s.lat = known.lat;
+            s.lng = known.lng;
+          }
+        });
+        savePlanToStorage();
+        plotCurrentPlanOnMap();
+
+        const missing = plan.stops.filter(function (s) { return !isPitPlaceholder(s) && (s.lat == null || s.lng == null); });
+        if (!missing.length) return;
+
+        for (let i = 0; i < plan.stops.length; i++) {
+          const s = plan.stops[i];
+          if (s.lat != null && s.lng != null) continue;
+          if (isPitPlaceholder(s)) continue;
+          const q = s.address || s.name;
+          if (!q) continue;
+          try {
+            const data = await api("/api/geocode/search?q=" + encodeURIComponent(q) + "&limit=1");
+            if (data.results && data.results[0]) {
+              s.lat = data.results[0].lat;
+              s.lng = data.results[0].lon;
+              savePlanToStorage();
+              plotCurrentPlanOnMap();
+            }
+          } catch (_) {}
+          await new Promise(function (r) { setTimeout(r, 1100); });
+        }
+        plotCurrentPlanOnMap();
+      }
+
+      function loadPlanFromHandoff(job, opts) {
+        opts = opts || {};
+        if (!job || !job.result) return false;
+        const r = job.result;
+        const rawStops = r.stops || r.orderedStops || [];
+        if (!Array.isArray(rawStops) || !rawStops.length) return false;
+        const startLabel =
+          (job.payload && (job.payload.start || job.payload.zip)) ||
+          document.getElementById("route-start").value.trim() ||
+          DEFAULT_START.label;
+        const endLabel =
+          (job.payload && job.payload.end) ||
+          document.getElementById("route-end").value.trim() ||
+          startLabel;
+        if (job.payload && job.payload.end) {
+          document.getElementById("route-end").value = job.payload.end;
+        }
+        if (job.payload && job.payload.startTime) {
+          // best-effort: leave time input as-is unless HH:MM-like
+        }
+        if (job.payload && job.payload.minutesPerStop) {
+          document.getElementById("route-dwell").value = job.payload.minutesPerStop;
+        }
+        if (job.payload && job.payload.durationHours) {
+          const dh = String(job.payload.durationHours);
+          const durSel = document.getElementById("route-duration");
+          if (["1", "2", "3", "4"].indexOf(dh) >= 0) durSel.value = dh;
+          else {
+            durSel.value = "custom";
+            document.getElementById("route-duration-custom").value = job.payload.durationHours;
+            document.getElementById("route-duration-custom-wrap").hidden = false;
+          }
+        }
+        const plan = {
+          id: job.id,
+          source: "live",
+          title: "Live · " + job.id,
+          summary: job.summary || r.drive || r.note || "Live Thrift Router plan",
+          startLabel: startLabel,
+          endLabel: endLabel,
+          mapsUrl: r.mapsUrl || r.googleMapsUrl || r.maps_url || null,
+          stops: rawStops.map(normalizeStop),
+        };
+        // Fresh live/API load: never inherit skip flags from localStorage.
+        // Only reuse cached lat/lng if this plan is still missing coords.
+        const saved = loadPlanFromStorage();
+        if (saved && saved.id === plan.id && saved.stops) {
+          saved.stops.forEach(function (ss, i) {
+            if (plan.stops[i] && ss.lat != null && plan.stops[i].lat == null) {
+              plan.stops[i].lat = ss.lat;
+              plan.stops[i].lng = ss.lng;
+            }
+          });
+        }
+        plan.stops.forEach(function (s) { s.skipped = false; });
+        setCurrentPlan(plan);
+        // Immediate plot — known/embedded coords should already fill lat/lng
+        plotCurrentPlanOnMap();
+        updateMapsLink();
+        const withCoords = plan.stops.filter(function (s) { return s.lat != null && s.lng != null; }).length;
+        document.getElementById("map-status").textContent =
+          withCoords + " stops on map" + (plan.stops.length > withCoords ? " · geocoding " + (plan.stops.length - withCoords) + "…" : "");
+        if (!opts.silent) {
+          showToast("Live route loaded", plan.summary.slice(0, 80), "info");
+        }
+        // Only hit Nominatim for stops still missing coords after lookup
+        geocodeMissingStops(plan);
+        return true;
+      }
+
+      function showDemoRoute() {
+        ensureRouteMap();
+        const n = Number(document.getElementById("route-stops").value) || 8;
+        const focus = document.getElementById("route-focus").value;
+        const slice = DEMO_ROUTE.slice(0, Math.min(n, DEMO_ROUTE.length));
+        const plan = {
+          id: "demo-" + Date.now(),
+          source: "demo",
+          title: "Demo route",
+          summary:
+            "Demo: " + slice.length + " stops" +
+            (focus === "golf" ? " · premium golf polo focus" : " · mixed athletic"),
+          startLabel: document.getElementById("route-start").value.trim() || DEFAULT_START.label,
+          mapsUrl: null,
+          endLabel: document.getElementById("route-end").value.trim() || document.getElementById("route-start").value.trim() || DEFAULT_START.label,
+          stops: slice.map(function (s, i) { return normalizeStop(s, i); }),
+        };
+        setCurrentPlan(plan);
+        updateMapsLink();
+        setTimeout(function () {
+          if (routeMap) routeMap.invalidateSize({ animate: false });
+          plotCurrentPlanOnMap();
+          updateMapsLink();
+        }, 120);
+        return plan.stops;
+      }
+
+      function getDurationHours() {
+        const sel = document.getElementById("route-duration");
+        if (!sel) return 3;
+        if (sel.value === "custom") {
+          const c = Number(document.getElementById("route-duration-custom").value);
+          return c > 0 ? c : 3;
+        }
+        return Number(sel.value) || 3;
+      }
+
+      function getStartTimeParts() {
+        const v = document.getElementById("route-start-time").value; // HH:MM
+        if (!v) return null;
+        const parts = v.split(":");
+        return { h: Number(parts[0]), m: Number(parts[1]) || 0, raw: v };
+      }
+
+      function formatClock(h, m) {
+        const ap = h >= 12 ? "PM" : "AM";
+        let hr = h % 12;
+        if (hr === 0) hr = 12;
+        return hr + ":" + String(m).padStart(2, "0") + " " + ap;
+      }
+
+      function formatStartTimeLocal() {
+        const p = getStartTimeParts();
+        if (!p) return "";
+        return formatClock(p.h, p.m) + " local";
+      }
+
+      function buildPlanPayload() {
+        const start = document.getElementById("route-start").value.trim() || DEFAULT_START.label;
+        const end = document.getElementById("route-end").value.trim() || start;
+        let zip = document.getElementById("route-zip").value.trim() || extractZip(start);
+        const stops = Number(document.getElementById("route-stops").value) || 8;
+        const focus =
+          document.getElementById("route-focus").value === "golf"
+            ? "used premium golf polos / clothing-heavy thrift & resale"
+            : "mixed athletic thrift & resale";
+        const day = document.getElementById("route-day").value.trim() || "today";
+        const durationHours = getDurationHours();
+        const minutesPerStop = Number(document.getElementById("route-dwell").value) || 20;
+        const startTimeLocal = formatStartTimeLocal();
+        const startParts = getStartTimeParts();
+
+        const payload = {
+          start: start,
+          end: end,
+          stops: stops,
+          stop_count: stops,
+          focus: focus,
+          day: day,
+          startTime: startTimeLocal || (startParts ? startParts.raw : ""),
+          durationHours: durationHours,
+          availableMinutes: Math.round(durationHours * 60),
+          minutesPerStop: minutesPerStop,
+          includeNonConventional: !!document.getElementById("route-nonconv").checked,
+          focusMode: document.getElementById("route-nonconv").checked ? "broad" : "clothing_heavy",
+          location: (window.POLO_HOME && window.POLO_HOME.label) || DEFAULT_START.label,
+        };
+        if (zip) payload.zip = zip;
+        if (startCoords && startCoords.lat != null) {
+          payload.startLat = startCoords.lat;
+          payload.startLng = startCoords.lng;
+        }
+        if (endCoords && endCoords.lat != null) {
+          payload.endLat = endCoords.lat;
+          payload.endLng = endCoords.lng;
+        }
+        return payload;
+      }
+
+      function roughDriveMinutes(activeCount) {
+        if (currentPlan && currentPlan.osrmDriveMin != null) return currentPlan.osrmDriveMin;
+        if (lastOsrmStats && lastOsrmStats.durationSeconds != null) {
+          return Math.round(lastOsrmStats.durationSeconds / 60);
+        }
+        // Heuristic: ~12 min per leg between stops + start→first + last→end
+        if (activeCount <= 0) return 20;
+        const legs = activeCount + 1; // start→1…n→end
+        return Math.round(legs * 12);
+      }
+
+      function updateTimeEstimate() {
+        const est = document.getElementById("route-estimate");
+        const banner = document.getElementById("stops-estimate-banner");
+        if (!est) return;
+
+        const durationHours = getDurationHours();
+        const available = Math.round(durationHours * 60);
+        const dwell = Number(document.getElementById("route-dwell").value) || 20;
+        const requested = Number(document.getElementById("route-stops").value) || 8;
+        const startParts = getStartTimeParts();
+
+        const active = currentPlan
+          ? currentPlan.stops.filter(function (s) { return !s.skipped; })
+          : null;
+        const stopCount = active ? active.length : requested;
+        const thriftCount = active
+          ? active.filter(function (s) { return !isPit(s); }).length
+          : requested;
+        const pitCount = active ? active.length - thriftCount : 0;
+        const storeMin = thriftCount * dwell + pitCount * 12;
+        const driveMin = roughDriveMinutes(stopCount);
+        const totalMin = storeMin + driveMin;
+        const fitStops = Math.max(0, Math.floor((available - driveMin) / dwell));
+
+        let windowStr = "";
+        if (startParts) {
+          const startMin = startParts.h * 60 + startParts.m;
+          const endMin = startMin + available;
+          windowStr =
+            "Window: " +
+            formatClock(startParts.h, startParts.m) +
+            "–" +
+            formatClock(Math.floor(endMin / 60) % 24, endMin % 60);
+        } else {
+          windowStr = "Window: (set start time)";
+        }
+
+        const hoursLabel = durationHours + "h";
+        const storeLabel =
+          Math.floor(storeMin / 60) + "h" + String(storeMin % 60).padStart(2, "0") + "m";
+        const driveLabel = "~" + driveMin + "m driving";
+
+        let tone = "";
+        let fitNote = "";
+        if (totalMin <= available * 0.9) {
+          fitNote = "fits comfortably";
+        } else if (totalMin <= available) {
+          tone = "warn";
+          fitNote = "may be tight";
+        } else {
+          tone = "over";
+          fitNote =
+            "over budget — try ~" + fitStops + " stops at " + dwell + " min each, or skip some";
+        }
+
+        const text =
+          windowStr +
+          " · " +
+          hoursLabel +
+          " · ~" +
+          dwell +
+          " min/stop · " +
+          stopCount +
+          " stop" +
+          (stopCount === 1 ? "" : "s") +
+          " ≈ " +
+          storeLabel +
+          " in-store + " +
+          driveLabel +
+          " — " +
+          fitNote;
+
+        est.className = "route-estimate" + (tone ? " " + tone : "");
+        est.innerHTML = "<strong>Time fit:</strong> " + text.replace(/ — /, " — <strong>") + (text.includes(" — ") ? "</strong>" : "");
+        // simpler plain text for clarity
+        est.textContent = "";
+        const strong = document.createElement("strong");
+        strong.textContent = "Time fit: ";
+        est.appendChild(strong);
+        est.appendChild(document.createTextNode(text));
+
+        if (banner) {
+          banner.className = "stops-estimate-banner" + (tone ? " " + tone : "");
+          banner.textContent = text;
+        }
+      }
+
+
+      async function geocodeStartAddress(q) {
+        const data = await api("/api/geocode/search?q=" + encodeURIComponent(q) + "&limit=1");
+        if (data.results && data.results.length) {
+          const r = data.results[0];
+          startCoords = { lat: r.lat, lng: r.lng != null ? r.lng : r.lon };
+          return r;
+        }
+        return null;
+      }
+
+      document.getElementById("btn-use-location").addEventListener("click", function () {
+        const errEl = document.getElementById("loc-error");
+        const stEl = document.getElementById("loc-status");
+        errEl.classList.remove("visible");
+        errEl.textContent = "";
+        stEl.textContent = "Requesting location…";
+        stEl.classList.remove("ok");
+        if (!navigator.geolocation) {
+          errEl.textContent = "Geolocation is not available in this browser. Type an address instead.";
+          errEl.classList.add("visible");
+          stEl.textContent = "";
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          async function (pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            startCoords = { lat: lat, lng: lng };
+            stEl.textContent = "GPS: " + lat.toFixed(5) + ", " + lng.toFixed(5) + " — reverse geocoding…";
+            ensureRouteMap();
+            plotCurrentPlanOnMap();
+            try {
+              const data = await api(
+                "/api/geocode/reverse?lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lng)
+              );
+              const name = data.display_name || lat.toFixed(5) + ", " + lng.toFixed(5);
+              document.getElementById("route-start").value = name;
+              const zip =
+                (data.address && (data.address.postcode || "").slice(0, 5)) || extractZip(name);
+              if (zip) document.getElementById("route-zip").value = zip;
+              stEl.textContent = "GPS: " + lat.toFixed(5) + ", " + lng.toFixed(5);
+              stEl.classList.add("ok");
+              if (currentPlan) currentPlan.startLabel = name;
+              plotCurrentPlanOnMap();
+              updateMapsLink();
+              showToast("Location set", "Starting point updated from your device.", "info");
+            } catch (e) {
+              document.getElementById("route-start").value = lat.toFixed(5) + ", " + lng.toFixed(5);
+              stEl.textContent = "GPS: " + lat.toFixed(5) + ", " + lng.toFixed(5) + " (address lookup failed)";
+              errEl.textContent =
+                "Got GPS but reverse geocode failed (" + e.message + "). You can edit the address field.";
+              errEl.classList.add("visible");
+              plotCurrentPlanOnMap();
+            }
+          },
+          function (err) {
+            stEl.textContent = "";
+            let msg = "Could not get location. Type an address instead.";
+            if (err && err.code === 1) msg = "Location permission denied. Type a starting address instead.";
+            else if (err && err.code === 2) msg = "Location unavailable. Type a starting address instead.";
+            else if (err && err.code === 3) msg = "Location request timed out. Type a starting address instead.";
+            errEl.textContent = msg;
+            errEl.classList.add("visible");
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+        );
+      });
+
+      document.getElementById("route-start").addEventListener("change", async function () {
+        const q = document.getElementById("route-start").value.trim();
+        const z = extractZip(q);
+        if (z) document.getElementById("route-zip").value = z;
+        if (!q || q.length < 3) return;
+        try {
+          const r = await geocodeStartAddress(q);
+          if (r) {
+            ensureRouteMap();
+            if (currentPlan) currentPlan.startLabel = q;
+            plotCurrentPlanOnMap();
+            updateMapsLink();
+            document.getElementById("loc-status").textContent =
+              "Geocoded start: " + startCoords.lat.toFixed(5) + ", " + startCoords.lng.toFixed(5);
+            document.getElementById("loc-status").classList.add("ok");
+          }
+        } catch (_) {}
+      });
+
+      document.getElementById("btn-plan-route").addEventListener("click", async function () {
+        const startVal = document.getElementById("route-start").value.trim();
+        if (startVal && startVal !== DEFAULT_START.label) {
+          try { await geocodeStartAddress(startVal); } catch (_) {}
+        }
+        const payload = buildPlanPayload();
+        try {
+          await queueHandoff("plan_route", "Thrift Router", payload);
+          // Prefer live if already available; else show demo preview while waiting
+          const live = findLatestLiveRouteJob();
+          if (live) {
+            loadPlanFromHandoff(live);
+          } else {
+            showDemoRoute();
+            document.getElementById("route-result-title").textContent = "Queued · demo preview (load live when ready)";
+          }
+        } catch (e) {
+          showDemoRoute();
+          showToast(
+            "Bridge offline",
+            "Could not queue handoff (" + e.message + "). Showing demo plan. Run: python3 app/server.py",
+            "warn"
+          );
+        }
+      });
+
+      document.getElementById("btn-plan-route-demo").addEventListener("click", function () {
+        showDemoRoute();
+        showToast("Demo route", "Local preview only — no handoff queued.", "info");
+      });
+
+      document.getElementById("btn-load-live-route").addEventListener("click", async function () {
+        await refreshHandoffs();
+        const job = findLatestLiveRouteJob();
+        if (!job) {
+          showToast("No live route", "No completed plan_route handoff with stops yet.", "warn");
+          return;
+        }
+        loadPlanFromHandoff(job);
+      });
+
+      document.getElementById("btn-skip-recent").addEventListener("click", function () {
+        var idx = recentStopIdx();
+        if (!idx.length) { alert("No stops visited in the last " + RECENT_DAYS + " days per Receipt Tracker."); return; }
+        idx.forEach(function (i) { currentPlan.stops[i].skipped = true; });
+        savePlanToStorage(); renderStopsTable(); plotCurrentPlanOnMap(); updateMapsLink(); updateTimeEstimate();
+      });
+      document.getElementById("btn-clear-skips").addEventListener("click", function () {
+        if (!currentPlan || !currentPlan.stops.length) {
+          showToast("Nothing to clear", "Load or plan a route first.", "warn");
+          return;
+        }
+        let n = 0;
+        currentPlan.stops.forEach(function (s) {
+          if (s.skipped) { s.skipped = false; n += 1; }
+        });
+        savePlanToStorage();
+        renderStopsTable();
+        plotCurrentPlanOnMap();
+        updateMapsLink();
+        updateTimeEstimate();
+        showToast("Skips cleared", n ? (n + " stop(s) restored to the route.") : "No stops were skipped.", "info");
+      });
+
+      document.getElementById("btn-insert-pit").addEventListener("click", function () {
+        if (!currentPlan || !currentPlan.stops.length) {
+          showToast("Load a route first", "Plan or demo a route, then insert a pit stop.", "warn");
+          return;
+        }
+        // Header button: drop a placeholder slot mid-route; user drags it, then picks.
+        const mid = Math.max(0, Math.floor(currentPlan.stops.length / 2) - 1);
+        insertPitPlaceholder(mid);
+      });
+      document.getElementById("pit-modal-cancel").addEventListener("click", closePitModal);
+      document.getElementById("pit-modal-backdrop").addEventListener("click", function (e) {
+        if (e.target === document.getElementById("pit-modal-backdrop")) closePitModal();
+      });
+      document.querySelectorAll("[data-pit-filter]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          pitFilter = btn.getAttribute("data-pit-filter") || "all";
+          document.querySelectorAll("[data-pit-filter]").forEach(function (b) {
+            b.classList.toggle("active", b === btn);
+          });
+          renderPitCandidates();
+        });
+      });
+
+      /* ——— Pricing v2: photos → questions → BUY/PASS + comps ——— */
+      const PR_KEY = "polo-pipeline-pricing-v2";
+      let prPhotos = []; // {name, dataUrl}
+      let prBatch = null;
+      let prPollTimer = null;
+
+      function prDefects() {
+        return [...document.querySelectorAll("#pr-defects input:checked")].map((i) => i.value).filter((v) => v !== "none");
+      }
+      document.getElementById("pr-defects").addEventListener("change", (e) => {
+        if (typeof prTouched !== "undefined") prTouched.add("pr-defects");
+        const boxes = [...document.querySelectorAll("#pr-defects input")];
+        if (e.target.value === "none" && e.target.checked) boxes.forEach((b) => { if (b.value !== "none") b.checked = false; });
+        else if (e.target.checked) boxes.find((b) => b.value === "none").checked = false;
+      });
+
+      const PR_BRANDS = ["peter millar","johnnie-o","johnnie o","g/fore","gfore","greyson","rlx","polo golf","ralph lauren","vineyard vines","travismathew","travis mathew","holderness","nike","titleist","footjoy","under armour","adidas","callaway","puma","bonobos","mizzen","linksoul","fairway","b. draddy","b draddy","zero restriction","dunning","criquet"];
+      function prPrefillFromName(name) {
+        const n = name.toLowerCase().replace(/[_\-.]+/g, " ");
+        const brandEl = document.getElementById("price-brand");
+        if (!brandEl.value) {
+          const b = PR_BRANDS.find((x) => n.includes(x));
+          if (b) brandEl.value = b.replace(/\b\w/g, (c) => c.toUpperCase());
+        }
+        const sz = n.match(/\b(xxxl|3xl|xxl|xl|xs|s|m|l)\b/);
+        if (sz) {
+          const map = { xxxl: "3XL", "3xl": "3XL", xxl: "XXL", xl: "XL", xs: "XS", s: "S", m: "M", l: "L" };
+          document.getElementById("price-size").value = map[sz[1]];
+        }
+      }
+
+      function prResize(file) {
+        return new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onerror = reject;
+          r.onload = () => {
+            const img = new Image();
+            img.onerror = () => resolve(r.result);
+            img.onload = () => {
+              const max = 1400, sc = Math.min(1, max / Math.max(img.width, img.height));
+              const c = document.createElement("canvas");
+              c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+              c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+              resolve(c.toDataURL("image/jpeg", 0.85));
+            };
+            img.src = r.result;
+          };
+          r.readAsDataURL(file);
+        });
+      }
+
+      const prTouched = new Set();
+      ["price-brand","price-size","price-condition","price-notes"].forEach((id) =>
+        document.getElementById(id).addEventListener("input", () => prTouched.add(id)));
+      ["price-size","price-condition"].forEach((id) =>
+        document.getElementById(id).addEventListener("change", () => prTouched.add(id)));
+      function prSetStatus(t) {
+        let el = document.getElementById("pr-vision");
+        if (!el) { el = document.createElement("div"); el.id = "pr-vision"; el.className = "pr-hint"; el.style.margin = "6px 0";
+          document.getElementById("pr-drop").after(el); }
+        el.textContent = t;
+      }
+      async function prAnalyze(names) {
+        prSetStatus("Reading photo…");
+        try {
+          const r = await fetch("/api/pricing/analyze", { method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ images: prPhotos.map((p) => p.dataUrl) }) });
+          const v = await r.json();
+          if (!r.ok) throw new Error(v.detail || v.error);
+          const filled = [];
+          const set = (id, val) => { const el = document.getElementById(id);
+            if (!val || prTouched.has(id)) return;
+            if (el.tagName === "INPUT" && el.value.trim()) return;
+            el.value = val; filled.push(id.replace("price-", "")); };
+          set("price-brand", [v.brand, v.styleLine].filter(Boolean).join(" "));
+          set("price-size", v.size);
+          set("price-condition", v.condition);
+          set("price-notes", [v.color, v.notes].filter(Boolean).join(", "));
+          if (v.defects && v.defects.length && !prTouched.has("pr-defects")) {
+            document.querySelectorAll("#pr-defects input").forEach((b) => {
+              if (b.value === "none") b.checked = false; else if (v.defects.includes(b.value)) b.checked = true; });
+          }
+          if (!v.brand) names.forEach(prPrefillFromName); // weak fallback
+          prSetStatus(filled.length ? "Read from photo (" + v.confidence + " confidence): " + filled.join(", ") + (v.brand ? "" : " — no brand found; add a tag photo")
+            : "Photo read — nothing new to fill" + (v.brand ? "" : " (no tag text found; try a close tag shot)"));
+        } catch (e) {
+          names.forEach(prPrefillFromName);
+          prSetStatus("Couldn't read photo (" + e.message + ") — fill fields manually.");
+        }
+      }
+      async function prAddFiles(files) {
+        const names = [];
+        for (const f of files) {
+          if (!f.type.startsWith("image/")) continue;
+          names.push(f.name);
+          const dataUrl = await prResize(f);
+          prPhotos.push({ name: f.name.replace(/\.[^.]+$/, "") + ".jpg", dataUrl });
+        }
+        prRenderThumbs();
+        if (names.length) prAnalyze(names);
+      }
+      function prRenderThumbs() {
+        const t = document.getElementById("pr-thumbs");
+        document.getElementById("pr-drop-empty").style.display = prPhotos.length ? "none" : "";
+        t.innerHTML = prPhotos.map((p, i) =>
+          '<div class="pr-thumb"><img src="' + p.dataUrl + '" alt="' + esc(p.name) + '"/><button type="button" data-rm="' + i + '" aria-label="Remove">×</button></div>'
+        ).join("") + (prPhotos.length ? '<button type="button" class="btn btn-secondary btn-sm" id="pr-more" style="align-self:center">+ Add more</button>' : "");
+        t.querySelectorAll("[data-rm]").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); prPhotos.splice(+b.dataset.rm, 1); prRenderThumbs(); }));
+        const more = document.getElementById("pr-more");
+        if (more) more.addEventListener("click", () => document.getElementById("pr-file").click());
+      }
+      const prDrop = document.getElementById("pr-drop");
+      document.getElementById("pr-browse").addEventListener("click", () => document.getElementById("pr-file").click());
+      document.getElementById("pr-file").addEventListener("change", (e) => { prAddFiles([...e.target.files]); e.target.value = ""; });
+      ["dragenter", "dragover"].forEach((ev) => prDrop.addEventListener(ev, (e) => { e.preventDefault(); prDrop.classList.add("drag"); }));
+      ["dragleave", "drop"].forEach((ev) => prDrop.addEventListener(ev, (e) => { e.preventDefault(); prDrop.classList.remove("drag"); }));
+      prDrop.addEventListener("drop", (e) => prAddFiles([...e.dataTransfer.files]));
+
+      function prInputs() {
+        return {
+          brand: document.getElementById("price-brand").value.trim(),
+          size: document.getElementById("price-size").value,
+          condition: document.getElementById("price-condition").value,
+          asking: parseFloat(document.getElementById("price-ask").value),
+          market: document.getElementById("price-market").value,
+          defects: prDefects(),
+          notes: document.getElementById("price-notes").value.trim(),
+        };
+      }
+
+      /* Demo comp engine (sample data, clearly labeled) */
+      function prBrandBase(b) {
+        b = b.toLowerCase();
+        if (/millar/.test(b)) return 42; if (/johnnie/.test(b)) return 36; if (/g\/?fore/.test(b)) return 48;
+        if (/greyson|rlx|holderness/.test(b)) return 40; if (/vineyard|travis|linksoul|criquet|dunning/.test(b)) return 30;
+        if (/polo|ralph/.test(b)) return 28; if (/titleist|footjoy/.test(b)) return 24; if (/nike/.test(b)) return 22;
+        if (/under armour|adidas|callaway|puma/.test(b)) return 18; return 16;
+      }
+      function prDemo(inp) {
+        const brand = inp.brand || "Golf polo";
+        let base = prBrandBase(brand);
+        const condAdj = { "New with tags": 1.3, "Like new": 1.1, Good: 1, Fair: 0.7 }[inp.condition] || 1;
+        const sizeAdj = { XS: 0.85, S: 0.9, M: 1, L: 1.05, XL: 1, XXL: 0.95, "3XL": 0.9 }[inp.size] || 1;
+        const defAdj = Math.max(0.4, 1 - 0.18 * inp.defects.length);
+        const seedStr = brand + inp.size; let seed = 0; for (const c of seedStr) seed = (seed * 31 + c.charCodeAt(0)) % 9973;
+        const rnd = () => ((seed = (seed * 16807) % 2147483647) % 1000) / 1000;
+        const conds = ["New with tags", "Like new", "Good", "Good", "Fair"];
+        const comps = [];
+        const now = Date.now();
+        for (let i = 0; i < 7; i++) {
+          const cond = conds[Math.floor(rnd() * conds.length)];
+          const cAdj = { "New with tags": 1.3, "Like new": 1.1, Good: 1, Fair: 0.7 }[cond];
+          const sold = i < 5;
+          const price = Math.round(base * sizeAdj * cAdj * (0.8 + rnd() * 0.45) * (sold ? 1 : 1.15));
+          const days = Math.round(3 + rnd() * 55);
+          comps.push({
+            title: brand + " golf polo · size " + inp.size + (inp.notes && i % 3 === 0 ? " · " + inp.notes : ""),
+            price, status: sold ? "sold" : "active",
+            date: sold ? new Date(now - days * 864e5).toISOString().slice(0, 10) : null,
+            condition: cond, url: "https://www.ebay.com/sch/i.html?_nkw=" + encodeURIComponent(brand + " polo " + inp.size) + "&LH_Sold=1&LH_Complete=1",
+          });
+        }
+        const soldP = comps.filter((c) => String(c.status).toLowerCase() === "sold").map((c) => c.price).sort((a, b) => a - b);
+        const median = soldP[Math.floor(soldP.length / 2)];
+        const expected = Math.round(median * (condAdj / 1) * defAdj);
+        const net = expected * 0.83 - 5; // ~13% fees + ~$5 ship/supplies
+        const ceiling = Math.max(0, Math.round(net / 3)); // want ~3x return
+        comps.forEach((c) => {
+          const myC = inp.condition;
+          if (String(c.status).toLowerCase() === "active") c.signal = "active competition";
+          else if (c.condition === myC || (c.condition === "Good" && myC === "Like new")) c.signal = c.price >= expected ? "sold median" : "sold floor";
+          else {
+            const rank = { "New with tags": 4, "Like new": 3, Good: 2, Fair: 1 };
+            const better = rank[c.condition] > rank[myC];
+            c.signal = better ? (c.price > expected ? "sold club-logo premium" : "weak comps / volume brand")
+                              : (c.price < expected ? "sold floor" : "sold median");
+          }
+        });
+        const ask = isNaN(inp.asking) ? null : inp.asking;
+        const buy = ask == null ? expected >= 20 : ask <= ceiling;
+        const why = [];
+        why.push(soldP.length + " sold comps, median $" + median + " → expect ~$" + expected + " for yours (" + inp.condition + (inp.defects.length ? ", " + inp.defects.join("/") : "") + ").");
+        why.push("After ~13% fees + ~$5 shipping, net ≈ $" + Math.round(net) + ". Max buy for a 3× return: $" + ceiling + ".");
+        if (ask != null) why.push(buy ? "Asking $" + ask + " is under the ceiling." : "Asking $" + ask + " is over the $" + ceiling + " ceiling.");
+        else why.push("No asking price entered — judged on resale value alone.");
+        if (inp.defects.length) why.push("Defects cut value ~" + Math.round((1 - defAdj) * 100) + "%.");
+        return {
+          decision: buy ? "buy" : "pass",
+          verdict: buy ? "BUY" : "PASS",
+          buyCeiling: ceiling, listPrice: Math.round(expected * 1.15),
+          soldRange: { low: soldP[0], high: soldP[soldP.length - 1] },
+          confidence: soldP.length >= 5 ? "med" : "low",
+          notes: why.join(" "), comps, source: "demo",
+        };
+      }
+
+      function prFmtMoney(v) {
+        if (v == null || v === "") return null;
+        const s = String(v);
+        return s.startsWith("$") ? s : "$" + s;
+      }
+      function prFmtSoldRange(sr) {
+        if (sr == null || sr === "") return null;
+        if (typeof sr === "object") {
+          const lo = sr.low != null ? sr.low : sr.min;
+          const hi = sr.high != null ? sr.high : sr.max;
+          if (lo == null && hi == null) return null;
+          if (lo != null && hi != null) return prFmtMoney(lo) + "–" + prFmtMoney(hi);
+          return prFmtMoney(lo != null ? lo : hi);
+        }
+        return String(sr);
+      }
+      function prFmtConfidence(c) {
+        if (c == null || c === "") return null;
+        const s = String(c).toLowerCase();
+        if (s === "med" || s === "medium") return "Medium";
+        if (s === "high") return "High";
+        if (s === "low") return "Low";
+        return String(c);
+      }
+      function prIsBuy(r) {
+        const raw = r.decision != null ? r.decision : r.verdict;
+        const v = String(raw == null ? "" : raw).toLowerCase();
+        return /^(buy|yes)$/.test(v);
+      }
+      function prSigTone(signal) {
+        if (signal && typeof signal === "object") return { k: signal.k || "flat", t: signal.t || signal.label || "—" };
+        const t = String(signal || "—");
+        const low = t.toLowerCase();
+        let k = "flat";
+        if (/floor|weak|caution|volume|pass|low/.test(low)) k = "down";
+        else if (/premium|ceiling|support|high|club-logo|club logo/.test(low)) k = "up";
+        else if (/median|active|competition|ask/.test(low)) k = "flat";
+        return { k, t };
+      }
+      function prFmtCompStatus(c) {
+        const st = String(c.status || (c.sold ? "sold" : "") || "").toLowerCase();
+        const label = st === "sold" ? "Sold" : st === "active" ? "Active" : (c.status || "—");
+        const d = c.date != null && c.date !== "" ? c.date : (c.soldDate || null);
+        if (st === "active" && (d == null || d === "")) return label;
+        if (d) return label + " · " + fmtDate(d);
+        return label || "—";
+      }
+
+      function prRender(r, opts) {
+        opts = opts || {};
+        const box = document.getElementById("pr-decision");
+        const isBuy = prIsBuy(r);
+        box.className = "pr-decision " + (isBuy ? "buy" : "pass");
+        const badge = r.source === "live" ? '<span class="pr-badge live">Live · Polo Pricing</span>' : '<span class="pr-badge">Sample comps' + (opts.pendingId ? " · live pending" : "") + "</span>";
+        const m = (label, val) => (val != null && val !== "" ? "<div>" + label + "<b>" + esc(String(val)) + "</b></div>" : "");
+        box.innerHTML =
+          '<div class="pr-verdict">' + (isBuy ? "BUY ✓" : "PASS ✕") + badge + "</div>" +
+          '<div class="pr-metrics">' +
+          m("Max buy", prFmtMoney(r.buyCeiling)) +
+          m("List at", prFmtMoney(r.listPrice)) +
+          m("Sold range", prFmtSoldRange(r.soldRange)) +
+          m("Confidence", prFmtConfidence(r.confidence)) + "</div>" +
+          '<div class="pr-why">' + esc(r.notes || "") + "</div>" +
+          (opts.pendingId ? '<div class="pr-why" style="margin-top:.5rem;color:var(--amber)">⏳ Live check queued with Polo Pricing (job ' + esc(opts.pendingId) + "). This will update when it answers.</div>" : "");
+        const comps = Array.isArray(r.comps) ? r.comps : [];
+        document.getElementById("pr-comps-src").textContent = r.source === "live" ? "from Polo Pricing" : "sample data — not real listings";
+        const tb = document.getElementById("pr-comps");
+        tb.innerHTML = comps.length ? comps.map((c) => {
+          const sig = prSigTone(c.signal);
+          const price = prFmtMoney(c.price) || "—";
+          return "<tr><td>" + esc(c.title || c.brand || "—") + '</td><td class="num">' + esc(String(price)) + "</td><td>" + esc(prFmtCompStatus(c)) +
+            "</td><td>" + esc(c.condition || "—") + '</td><td><span class="pr-sig ' + esc(sig.k) + '">' + esc(sig.t) + "</span></td><td>" +
+            (c.url || c.link ? '<a href="' + esc(c.url || c.link) + '" target="_blank" rel="noopener">' + (r.source === "live" ? "View" : "Search eBay") + "</a>" : "—") + "</td></tr>";
+        }).join("") : '<tr><td colspan="6" class="pr-empty">Polo Pricing returned no comp rows' + (r.notes ? " — see notes above." : ".") + "</td></tr>";
+      }
+
+      function prNormalizeLive(job) {
+        const res = job.result || {};
+        const text = [job.summary, res.notes, res.text, res.content].filter(Boolean).join(" ");
+        let decision = res.decision != null ? res.decision : (res.verdict != null ? res.verdict : res.buy);
+        if (decision === true) decision = "buy";
+        if (decision === false) decision = "pass";
+        if (decision != null) {
+          const d = String(decision).toLowerCase();
+          if (/^(buy|yes)$/.test(d)) decision = "buy";
+          else if (/^(pass|no)$/.test(d)) decision = "pass";
+        }
+        if (!decision) decision = /\b(yes|buy)\b/i.test(text) && !/\b(no|pass)\b/i.test(text.slice(0, 40)) ? "buy" : "pass";
+        let soldRange = res.soldRange ?? res.sold_range;
+        if (typeof soldRange === "string") {
+          const m = soldRange.replace(/[, ]/g, "").match(/\$?(\d+(?:\.\d+)?)\s*[–\-—to]+\s*\$?(\d+(?:\.\d+)?)/i);
+          if (m) soldRange = { low: +m[1], high: +m[2] };
+        } else if (soldRange && typeof soldRange === "object") {
+          soldRange = {
+            low: soldRange.low != null ? soldRange.low : soldRange.min,
+            high: soldRange.high != null ? soldRange.high : soldRange.max,
+          };
+        }
+        const comps = (res.comps || res.comparables || []).map((c) => ({
+          title: c.title || c.brand || "",
+          price: c.price,
+          status: String(c.status || (c.sold ? "sold" : "active")).toLowerCase() === "sold" ? "sold" : "active",
+          date: c.date != null ? c.date : (c.soldDate != null ? c.soldDate : null),
+          condition: c.condition || "",
+          url: c.url || c.link || "",
+          signal: c.signal || "",
+        }));
+        return {
+          decision,
+          verdict: decision === "buy" ? "BUY" : "PASS",
+          buyCeiling: res.buyCeiling ?? res.buy_ceiling ?? res.maxBuy,
+          listPrice: res.listPrice ?? res.suggestedList ?? res.suggested_list,
+          soldRange,
+          confidence: res.confidence,
+          notes: res.notes || job.summary || res.text || "",
+          comps,
+          source: "live",
+        };
+      }
+
+      function prPoll(jobId) {
+        clearInterval(prPollTimer);
+        prPollTimer = setInterval(async () => {
+          try {
+            const job = await api("/api/handoffs/" + jobId);
+            const j = job.job || job;
+            if (j.status === "completed" || j.status === "done") {
+              clearInterval(prPollTimer);
+              const r = prNormalizeLive(j);
+              prRender(r);
+              localStorage.setItem(PR_KEY, JSON.stringify({ result: r }));
+              showToast("Polo Pricing answered", (r.decision || r.verdict || "").toString().toUpperCase() + " · live comps loaded", "info");
+            }
+          } catch (_) {}
+        }, 6000);
+      }
+
+      async function prUploadPhotos() {
+        prBatch = Math.random().toString(16).slice(2, 14);
+        const out = [];
+        for (const p of prPhotos) {
+          const r = await api("/api/uploads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batch: prBatch, name: p.name, data: p.dataUrl }) });
+          out.push(r.path);
+        }
+        return out;
+      }
+
+      document.getElementById("btn-get-price").addEventListener("click", async () => {
+        const inp = prInputs();
+        if (!prPhotos.length) { showToast("Add a photo", "Drop at least one photo (front + tag is best).", "warn"); return; }
+        if (!inp.brand) { showToast("Brand needed", "Enter the brand / style line.", "warn"); document.getElementById("price-brand").focus(); return; }
+        const demo = prDemo(inp);
+        let jobId = null;
+        try {
+          const photoPaths = await prUploadPhotos();
+          const cond = inp.condition + (inp.defects.length ? "; defects: " + inp.defects.join(", ") : "; no defects");
+          const job = await queueHandoff("get_price", "Polo Pricing", {
+            brand: inp.brand, size: inp.size, condition: cond, conditionFlags: inp.defects,
+            asking: isNaN(inp.asking) ? null : inp.asking, market: inp.market, notes: inp.notes,
+            photos: photoPaths,
+            request: "Price this polo. Brand: " + inp.brand + ". Size: " + inp.size + "." + (inp.notes ? " Color/notes: " + inp.notes + "." : "") +
+              " Asking: " + (isNaN(inp.asking) ? "unknown" : "$" + inp.asking) + ". Condition: " + cond + ". Target market: " + inp.market +
+              ". Photos attached (paths above). Return decision buy|pass, buyCeiling, listPrice, soldRange {low,high}, confidence high|med|low, short notes, and comps[{title,price,status:sold|active,date ISO or null,condition,url,signal}].",
+            wantResult: { decision: "buy|pass", buyCeiling: "number", listPrice: "number", soldRange: { low: 0, high: 0 }, confidence: "high|med|low", notes: "string", comps: [{ title: "", price: 0, status: "sold|active", date: null, condition: "", url: "", signal: "" }] },
+          });
+          jobId = job.id;
+          prPoll(jobId);
+        } catch (e) {
+          showToast("Bridge offline", "Showing sample decision only (" + e.message + ").", "warn");
+        }
+        prRender(demo, { pendingId: jobId });
+        document.getElementById("pr-decision").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+
+      document.getElementById("btn-price-reset").addEventListener("click", () => {
+        prTouched.clear(); const pv = document.getElementById("pr-vision"); if (pv) pv.textContent = "";
+        prPhotos = []; prRenderThumbs(); clearInterval(prPollTimer);
+        ["price-brand", "price-ask", "price-notes"].forEach((id) => (document.getElementById(id).value = ""));
+        document.getElementById("pr-decision").className = "pr-decision";
+        document.getElementById("pr-decision").innerHTML = '<div class="pr-empty">Upload photos and answer the questions — your <strong>BUY / PASS</strong> call shows up here.</div>';
+        document.getElementById("pr-comps").innerHTML = '<tr><td colspan="6" class="pr-empty">No comps yet.</td></tr>';
+        document.getElementById("pr-comps-src").textContent = "";
+      });
+
+      /* ——— Toast & modal ——— */
+      function showToast(title, body, kind) {
+        const root = document.getElementById("toast-root");
+        const toast = document.createElement("div");
+        toast.className = "toast" + (kind === "warn" ? " warn" : kind === "info" ? " info" : "");
+        toast.innerHTML =
+          '<button type="button" class="toast-close" aria-label="Dismiss">×</button>' +
+          '<div class="toast-title">' +
+          esc(title) +
+          '</div><div class="toast-body">' +
+          esc(body) +
+          "</div>";
+        toast.querySelector(".toast-close").addEventListener("click", () => toast.remove());
+        root.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+      }
+
+      const backdrop = document.getElementById("modal-backdrop");
+      const modalExtra = document.getElementById("modal-extra");
+
+      function openConfirm(stage) {
+        modalStage = stage;
+        document.getElementById("modal-title").textContent = stage.confirmTitle;
+        document.getElementById("modal-body").textContent = stage.confirmBody;
+        if (stage.needsFolder) {
+          modalExtra.hidden = false;
+        } else {
+          modalExtra.hidden = true;
+        }
+        const okBtn = document.getElementById("modal-ok");
+        okBtn.textContent = stage.handoffAction ? "Queue for App Builder" : "OK";
+        modalCallback = async () => {
+          if (!stage.handoffAction) {
+            showToast(stage.name, "Sold / Done is tracking only.", "info");
+            return;
+          }
+          let payload = {};
+          if (stage.handoffAction === "process_photos") {
+            payload = {
+              folder: document.getElementById("modal-folder").value.trim() || "photos/inbox",
+              shirtCount: countByStage("intake"),
+            };
+          } else if (stage.handoffAction === "create_listings") {
+            payload = {
+              shirtIds: inventory.filter((s) => s.stage === "list").map((s) => s.id),
+              count: countByStage("list"),
+            };
+          }
+          try {
+            await queueHandoff(stage.handoffAction, stage.bot, payload);
+          } catch (e) {
+            showToast("Bridge offline", "Could not queue (" + e.message + "). Start: python3 app/server.py", "warn");
+          }
+        };
+        backdrop.classList.add("open");
+        okBtn.focus();
+      }
+
+      function closeModal() {
+        backdrop.classList.remove("open");
+        modalCallback = null;
+        modalStage = null;
+      }
+
+      document.getElementById("modal-cancel").addEventListener("click", closeModal);
+      document.getElementById("modal-ok").addEventListener("click", async () => {
+        const cb = modalCallback;
+        closeModal();
+        if (cb) await cb();
+      });
+      backdrop.addEventListener("click", (e) => {
+        if (e.target === backdrop) closeModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && backdrop.classList.contains("open")) closeModal();
+      });
+
+      document.getElementById("btn-reset").addEventListener("click", () => {
+        inventory = DEFAULT_INVENTORY.map((x) => ({ ...x }));
+        saveInventory();
+        renderHome();
+        showToast("Demo reset", "Inventory restored to the sample polo set.", "warn");
+      });
+
+      document.getElementById("btn-refresh-handoffs").addEventListener("click", () => refreshHandoffs());
+      document.getElementById("btn-refresh-handoffs-2").addEventListener("click", () => refreshHandoffs());
+
+
+      function defaultStartTimeValue() {
+        const now = new Date();
+        let h = now.getHours();
+        let m = now.getMinutes();
+        if (m > 0) { h = (h + 1) % 24; }
+        return String(h).padStart(2, "0") + ":00";
+      }
+
+      function syncEndSame() {
+        const same = document.getElementById("route-end-same");
+        const end = document.getElementById("route-end");
+        if (!same || !end) return;
+        if (same.checked) {
+          end.value = document.getElementById("route-start").value;
+          end.readOnly = true;
+          endCoords = { lat: startCoords.lat, lng: startCoords.lng };
+        } else {
+          end.readOnly = false;
+        }
+        updateTimeEstimate();
+        updateMapsLink();
+      }
+
+      (function initTimedRouteFields() {
+        const st = document.getElementById("route-start-time");
+        if (st && !st.value) st.value = defaultStartTimeValue();
+
+        const dur = document.getElementById("route-duration");
+        const customWrap = document.getElementById("route-duration-custom-wrap");
+        function syncDur() {
+          if (!dur || !customWrap) return;
+          customWrap.hidden = dur.value !== "custom";
+          updateTimeEstimate();
+        }
+        if (dur) dur.addEventListener("change", syncDur);
+
+        ["route-start-time", "route-dwell", "route-stops", "route-duration-custom"].forEach(function (id) {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener("input", updateTimeEstimate);
+          if (el) el.addEventListener("change", updateTimeEstimate);
+        });
+
+        const same = document.getElementById("route-end-same");
+        if (same) same.addEventListener("change", syncEndSame);
+        const startEl = document.getElementById("route-start");
+        if (startEl) {
+          startEl.addEventListener("input", function () {
+            if (document.getElementById("route-end-same").checked) {
+              document.getElementById("route-end").value = startEl.value;
+            }
+          });
+        }
+        const endEl = document.getElementById("route-end");
+        if (endEl) {
+          endEl.addEventListener("change", async function () {
+            const q = endEl.value.trim();
+            if (!q) return;
+            try {
+              const data = await api("/api/geocode/search?q=" + encodeURIComponent(q) + "&limit=1");
+              if (data.results && data.results[0]) {
+                endCoords = { lat: data.results[0].lat, lng: data.results[0].lon };
+              }
+            } catch (_) {}
+            if (currentPlan) currentPlan.endLabel = q;
+            updateMapsLink();
+            updateTimeEstimate();
+          });
+        }
+        syncDur();
+        updateTimeEstimate();
+      })();
+
+
+      /* ——— Receipt Tracker ——— */
+      (function () {
+        const $ = (id) => document.getElementById(id);
+        const RC_KEY = "polo-pipeline-receipt-stats-v1"; // Route Planning reads this for skip hints
+        let rcPhotos = [], rcLines = [], rcExtra = {};
+        const esc = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+        const money = (n) => "$" + (Number(n) || 0).toFixed(2);
+        function shrink(file) {
+          return new Promise((res) => { const r = new FileReader(); r.onload = () => { const img = new Image();
+            img.onload = () => { const k = Math.min(1, 1800 / Math.max(img.width, img.height)); const c = document.createElement("canvas");
+              c.width = img.width * k; c.height = img.height * k; c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); res(c.toDataURL("image/jpeg", 0.88)); };
+            img.src = r.result; }; r.readAsDataURL(file); });
+        }
+        function renderLines() {
+          $("rc-lines").innerHTML = rcLines.length ? rcLines.map((l, i) =>
+            '<tr><td><input class="rc-in" data-i="' + i + '" data-k="name" value="' + esc(l.name) + '"></td>' +
+            '<td><input class="rc-in" style="width:4em" type="number" data-i="' + i + '" data-k="qty" value="' + l.qty + '"></td>' +
+            '<td><input class="rc-in" style="width:6em" type="number" step="0.01" data-i="' + i + '" data-k="unit" value="' + l.unit + '"></td>' +
+            '<td class="num">' + money(l.amount) + (l.donation ? '<span class="rc-tag">donation</span>' : "") + '</td>' +
+            '<td><button class="btn btn-ghost btn-sm" data-del="' + i + '">✕</button></td></tr>').join("")
+            : '<tr><td colspan="5" class="pr-empty">No line items read — add them or just save the total.</td></tr>';
+        }
+        $("rc-lines").addEventListener("input", (e) => { const t = e.target; if (!t.dataset.k) return; const l = rcLines[t.dataset.i];
+          l[t.dataset.k] = t.dataset.k === "name" ? t.value : Number(t.value) || 0; l.amount = Math.round(l.qty * l.unit * 100) / 100;
+          const cell = t.closest("tr").children[3]; cell.firstChild.textContent = money(l.amount); });
+        $("rc-lines").addEventListener("click", (e) => { const d = e.target.dataset.del; if (d != null) { rcLines.splice(+d, 1); renderLines(); } });
+        $("rc-add-line").onclick = () => { rcLines.push({ name: "", qty: 1, unit: 0, amount: 0 }); renderLines(); };
+        function fill(v) {
+          $("rc-form").hidden = false;
+          $("rc-store").value = v.store || ""; $("rc-date").value = v.date || new Date().toISOString().slice(0, 10);
+          $("rc-address").value = v.address || ""; $("rc-subtotal").value = v.subtotal ?? ""; $("rc-tax").value = v.tax ?? "";
+          $("rc-total").value = v.total ?? ""; $("rc-count").value = v.itemCount ?? "";
+          rcLines = (v.items || []).map((x) => Object.assign({}, x)); rcExtra = { phone: v.phone, ticket: v.ticket }; renderLines();
+        }
+        async function addFiles(files) {
+          for (const f of files) if (f.type.startsWith("image/")) rcPhotos.push(await shrink(f));
+          $("rc-drop-empty").hidden = rcPhotos.length > 0;
+          $("rc-thumbs").innerHTML = rcPhotos.map((u) => '<img src="' + u + '" style="height:90px;border-radius:8px;margin:4px">').join("");
+          $("rc-status").textContent = "Reading receipt…";
+          try {
+            const r = await fetch("/api/receipts/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ images: rcPhotos }) });
+            const v = await r.json(); if (!r.ok) throw new Error(v.detail || v.error);
+            fill(v);
+            const miss = ["store", "date", "total", "address"].filter((k) => !v[k]);
+            $("rc-status").textContent = "Read receipt (" + v.confidence + " confidence) — " + (v.items || []).length + " line items" +
+              (miss.length ? " · couldn't find: " + miss.join(", ") : "") + ". Check fields, then Save.";
+          } catch (e) { fill({}); $("rc-status").textContent = "Couldn't read receipt (" + e.message + ") — fill fields manually."; }
+        }
+        $("rc-browse").onclick = (e) => { e.stopPropagation(); $("rc-file").click(); };
+        $("rc-drop").onclick = () => { if (!rcPhotos.length) $("rc-file").click(); };
+        $("rc-file").onchange = (e) => { addFiles([...e.target.files]); e.target.value = ""; };
+        $("rc-drop").addEventListener("dragover", (e) => e.preventDefault());
+        $("rc-drop").addEventListener("drop", (e) => { e.preventDefault(); addFiles([...e.dataTransfer.files]); });
+        function clear() { rcPhotos = []; rcLines = []; $("rc-thumbs").innerHTML = ""; $("rc-drop-empty").hidden = false; $("rc-form").hidden = true; $("rc-status").textContent = ""; }
+        $("rc-clear").onclick = clear;
+        $("rc-save").onclick = async () => {
+          const rec = Object.assign({}, rcExtra, { store: $("rc-store").value.trim() || "Unknown", date: $("rc-date").value || null,
+            address: $("rc-address").value.trim(), subtotal: Number($("rc-subtotal").value) || null, tax: Number($("rc-tax").value) || null,
+            total: Number($("rc-total").value) || 0, itemCount: Number($("rc-count").value) || 0, items: rcLines, source: "ocr" });
+          try { const r = await fetch("/api/receipts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rec) });
+            if (!r.ok) throw new Error("save failed"); clear(); $("rc-status").textContent = "Saved " + rec.store + " · " + money(rec.total); load();
+          } catch (e) { $("rc-status").textContent = "Couldn't save: " + e.message; }
+        };
+        function render(data) {
+          const st = data.stats || [], recs = data.receipts || []; rcStats = st;
+          try { localStorage.setItem(RC_KEY, JSON.stringify({ updatedAt: new Date().toISOString(), locations: st })); } catch (e) {}
+          if (window.setReceiptLocs) window.setReceiptLocs(st);
+          const tot = st.reduce((a, s) => a + s.totalSpent, 0);
+          $("rc-summary").textContent = st.length ? st.length + " locations · " + money(tot) + " total · sorted by spend" : "";
+          $("rc-stats").innerHTML = st.length ? st.map((s) => { const d = s.daysSince; const cls = d == null ? "" : d <= 14 ? "fresh" : d <= 45 ? "mid" : "stale";
+            return '<tr><td><strong>' + esc(s.store) + '</strong><div class="rc-loc-addr">' + esc(s.address || "") + '</div></td><td class="num rc-num">' + money(s.totalSpent) +
+              '</td><td class="rc-visits">' + s.visits + '</td><td class="rc-last">' + fmtDate(s.lastVisit) + '</td><td class="rc-days ' + cls + '">' + (d == null ? "—" : d + "d") +
+              '</td><td class="rc-visits">' + s.items + '</td><td class="num rc-num">' + (s.items ? money(s.totalSpent / s.items) : "—") + "</td>" +
+              '<td class="rc-stars" data-key="' + esc(s.key) + '">' + [1,2,3,4,5].map((n) => '<button type="button" data-star="' + n + '" class="' + (s.rating >= n ? "on" : "") + '" title="' + n + ' star' + (n > 1 ? "s" : "") + ' (click again to clear)">★</button>').join("") + "</td>" +
+              '<td class="rc-notes-cell"><textarea class="rc-notes" data-key="' + esc(s.key) + '" placeholder="Notes…">' + esc(s.notes || "") + "</textarea></td></tr>"; }).join("")
+            : '<tr><td colspan="9" class="pr-empty">No receipts yet — drop a receipt photo above.</td></tr>';
+          $("rc-recent").innerHTML = recs.slice().sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 15).map((r) =>
+            "<tr><td>" + fmtDate(r.date) + "</td><td>" + esc(r.store) + (r.demo ? '<span class="rc-tag">demo</span>' : "") + "</td><td>" + (r.itemCount || 0) +
+            '</td><td class="num">' + money(r.total) + '</td><td><button class="btn btn-ghost btn-sm" data-rdel="' + esc(r.id) + '">Delete</button></td></tr>').join("")
+            || '<tr><td colspan="5" class="pr-empty">None yet.</td></tr>';
+        }
+        let rcStats = [];
+        async function saveRating(key, patch) {
+          const L = rcStats.find((x) => x.key === key); if (!L) return;
+          Object.assign(L, patch); patch.key = key; patch.store = L.store;
+          try { localStorage.setItem(RC_KEY, JSON.stringify({ updatedAt: new Date().toISOString(), locations: rcStats })); } catch (e) {}
+          if (window.setReceiptLocs) window.setReceiptLocs(rcStats);
+          try { await fetch("/api/location-ratings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) }); } catch (e) {}
+        }
+        $("rc-stats").addEventListener("click", (e) => { const b = e.target.closest("[data-star]"); if (!b) return;
+          const td = b.closest(".rc-stars"), key = td.dataset.key, L = rcStats.find((x) => x.key === key); if (!L) return;
+          const n = +b.dataset.star, r = L.rating === n ? null : n;
+          td.querySelectorAll("button").forEach((x) => x.classList.toggle("on", r != null && +x.dataset.star <= r));
+          saveRating(key, { rating: r }); });
+        $("rc-stats").addEventListener("change", (e) => { if (e.target.classList.contains("rc-notes")) saveRating(e.target.dataset.key, { notes: e.target.value }); });
+        $("rc-recent").addEventListener("click", async (e) => { const id = e.target.dataset.rdel; if (!id || !confirm("Delete this receipt?")) return;
+          await fetch("/api/receipts/" + encodeURIComponent(id), { method: "DELETE" }); load(); });
+        async function load() {
+          try { const r = await fetch("/api/receipts"); render(await r.json()); }
+          catch (e) { try { render({ stats: (JSON.parse(localStorage.getItem(RC_KEY)) || {}).locations || [] }); } catch (_) {} }
+        }
+        window.rcLoad = load; load();
+      })();
+      renderHome();
+      refreshHandoffs();
+      setInterval(refreshHandoffs, 8000);
+    })();
+  </script>
+</body>
+</html>

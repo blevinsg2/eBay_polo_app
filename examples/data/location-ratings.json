@@ -1,0 +1,12 @@
+{
+  "_note": "EXAMPLE DATA.",
+  "updatedAt": "2026-10-05T18:00:00Z",
+  "locations": {
+    "a:exampleaddressnhighst": {
+      "rating": 4,
+      "notes": "EXAMPLE: good polo racks",
+      "updatedAt": "2026-10-05T18:00:00Z",
+      "store": "EXAMPLE Thrift · Short North"
+    }
+  }
+}

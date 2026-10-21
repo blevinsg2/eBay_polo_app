@@ -1,0 +1,33 @@
+{
+  "_note": "EXAMPLE DATA. A create_listings job waiting on owner approval.",
+  "id": "example-create-listings-0001",
+  "createdAt": "2026-10-01T16:00:00Z",
+  "completedAt": "2026-10-01T16:10:00Z",
+  "action": "create_listings",
+  "targetBot": "Polo Listing Bot",
+  "payload": {
+    "skus": [
+      "EX-0001",
+      "EX-0002"
+    ],
+    "note": "EXAMPLE"
+  },
+  "status": "completed",
+  "summary": "EXAMPLE: 2 drafts ready, awaiting owner approval",
+  "result": {
+    "drafts": [
+      {
+        "sku": "EX-0001",
+        "title": "EXAMPLE Peter Millar Golf Polo Mens Large Blue Stripe Performance",
+        "price": 24.67,
+        "status": "awaiting_owner_approval"
+      },
+      {
+        "sku": "EX-0002",
+        "title": "EXAMPLE FootJoy Golf Polo Mens Medium Gray Solid Stretch",
+        "price": 19.67,
+        "status": "awaiting_owner_approval"
+      }
+    ]
+  }
+}

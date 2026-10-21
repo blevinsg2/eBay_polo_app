@@ -1,0 +1,54 @@
+{
+  "bot": "Polo Pricing",
+  "action": "get_price",
+  "inputsRequired": [
+    "photos front+tag",
+    "size",
+    "brand",
+    "asking price or range",
+    "condition flags"
+  ],
+  "inputsOptional": [
+    "style line",
+    "color/pattern",
+    "club logo"
+  ],
+  "returns": [
+    "decision buy|pass",
+    "buyCeiling (number USD)",
+    "listPrice (number USD)",
+    "soldRange { low, high }",
+    "confidence high|med|low",
+    "notes (short string)",
+    "comps[] — sold/active examples that drove the call (title, price, status, date, condition, url, signal)"
+  ],
+  "idealRequest": "Price this polo. Brand: Peter Millar Summer Comfort. Size: M. Color: lavender micro-stripe with a club monogram. Asking: $8+. Condition: clean, no defects. Photos attached.",
+  "cannot": [
+    "buy/list/message",
+    "guarantee sale",
+    "price without photos or asking+condition",
+    "instant verdict with no comps"
+  ],
+  "resultShape": {
+    "decision": "buy|pass",
+    "buyCeiling": "number USD max to pay",
+    "listPrice": "number suggested list",
+    "soldRange": {
+      "low": "number",
+      "high": "number"
+    },
+    "confidence": "high|med|low",
+    "notes": "short rationale",
+    "comps": [
+      {
+        "title": "listing title",
+        "price": 0,
+        "status": "sold|active",
+        "date": "ISO date or null if active",
+        "condition": "optional",
+        "url": "optional listing or search URL",
+        "signal": "e.g. sold floor | sold median | sold club-logo premium | active competition | weak comps / volume brand"
+      }
+    ]
+  }
+}

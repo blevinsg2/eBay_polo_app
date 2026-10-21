@@ -1,0 +1,5 @@
+# Optional: tools/photos/listing_photo.py (shirt cutout + listing overlays)
+-r requirements.txt
+numpy>=1.26
+opencv-python-headless>=4.8
+rembg[cpu]>=2.0   # downloads the u2net model (~170 MB) on first run

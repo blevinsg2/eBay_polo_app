@@ -1,0 +1,88 @@
+{
+  "_note": "EXAMPLE DATA. A completed plan_route job. Stores and addresses are made up; coordinates are spread around Columbus, OH so the map draws.",
+  "id": "example-plan-route-0001",
+  "createdAt": "2026-10-01T13:00:00Z",
+  "completedAt": "2026-10-01T13:02:00Z",
+  "action": "plan_route",
+  "targetBot": "Thrift Router",
+  "payload": {
+    "start": "EXAMPLE start · Downtown Columbus, OH",
+    "end": "EXAMPLE start · Downtown Columbus, OH",
+    "stops": 6,
+    "stop_count": 6,
+    "focus": "used premium golf polos / clothing-heavy thrift & resale",
+    "day": "today",
+    "startTime": "1:00 PM local",
+    "durationHours": 3,
+    "minutesPerStop": 20,
+    "startLat": 39.9612,
+    "startLng": -82.9988
+  },
+  "status": "completed",
+  "summary": "EXAMPLE 6-stop loop from downtown Columbus · ~25 mi · ~3 hrs with browsing",
+  "result": {
+    "mapsUrl": "https://www.google.com/maps/dir/?api=1&origin=39.9612,-82.9988&destination=39.9612,-82.9988&waypoints=39.979,-83.0035%7C40.005,-83.009%7C40.04,-83.015%7C40.062,-83.02%7C40.059,-82.97%7C40.03,-82.955",
+    "drive": "~25 mi, ~1 hr driving (not counting store time)",
+    "note": "EXAMPLE: hit the Charity Store before it closes at 5",
+    "stops": [
+      {
+        "n": 1,
+        "name": "EXAMPLE Thrift · Short North",
+        "address": "EXAMPLE address · N High St, Columbus, OH",
+        "hours": "10–7",
+        "url": "",
+        "lat": 39.979,
+        "lng": -83.0035
+      },
+      {
+        "n": 2,
+        "name": "EXAMPLE Resale · Campus",
+        "address": "EXAMPLE address · near OSU, Columbus, OH",
+        "hours": "10–7",
+        "url": "",
+        "lat": 40.005,
+        "lng": -83.009
+      },
+      {
+        "n": 3,
+        "name": "EXAMPLE Thrift · Clintonville",
+        "address": "EXAMPLE address · Clintonville, Columbus, OH",
+        "hours": "10–7",
+        "url": "",
+        "lat": 40.04,
+        "lng": -83.015
+      },
+      {
+        "n": 4,
+        "name": "EXAMPLE Charity Store",
+        "address": "EXAMPLE address · north High St, Columbus, OH",
+        "hours": "10–5",
+        "url": "",
+        "lat": 40.062,
+        "lng": -83.02
+      },
+      {
+        "n": 5,
+        "name": "EXAMPLE Consignment",
+        "address": "EXAMPLE address · north side, Columbus, OH",
+        "hours": "10–9",
+        "url": "",
+        "lat": 40.059,
+        "lng": -82.97
+      },
+      {
+        "n": 6,
+        "name": "EXAMPLE Upscale Resale",
+        "address": "EXAMPLE address · northeast, Columbus, OH",
+        "hours": "10–8",
+        "url": "",
+        "lat": 40.03,
+        "lng": -82.955
+      }
+    ],
+    "swap": "EXAMPLE: swap Consignment for Thrift Superstore if you're short on time",
+    "excluded": [
+      "EXAMPLE Furniture Outlet (furniture only)"
+    ]
+  }
+}
